@@ -1355,6 +1355,26 @@ namespace SparkyStudios::Audio::Amplitude
         return snd->sound->GetChannel().GetLocation();
     }
 
+    namespace
+    {
+        // Built at load, so the audio thread neither constructs it nor takes a function-local static's guard.
+        const Orientation kZeroOrientation = Orientation::Zero();
+
+        const Orientation& GetFollowedOrientation(const AmplimixLayer& layer)
+        {
+            const Entity entity = layer.GetEntity();
+            return entity.Valid() ? entity.GetOrientation() : kZeroOrientation;
+        }
+    } // namespace
+
+    const Orientation& AmplimixLayerImpl::GetOrientation() const
+    {
+        if (processingInstance && currentInstanceIndex < instanceData.size() && instanceData[currentInstanceIndex].hasOrientation)
+            return instanceData[currentInstanceIndex].orientation;
+
+        return GetFollowedOrientation(*this);
+    }
+
     Entity AmplimixLayerImpl::GetEntity() const
     {
         if (snd == nullptr || snd->sound == nullptr)
@@ -1503,6 +1523,19 @@ namespace SparkyStudios::Audio::Amplitude
             return kVector3Zero;
 
         return instanceData[index].location;
+    }
+
+    bool AmplimixLayerImpl::HasInstanceOrientation(AmSize index) const
+    {
+        return index < instanceData.size() && instanceData[index].hasOrientation;
+    }
+
+    const Orientation& AmplimixLayerImpl::GetInstanceOrientation(AmSize index) const
+    {
+        if (index < instanceData.size() && instanceData[index].hasOrientation)
+            return instanceData[index].orientation;
+
+        return GetFollowedOrientation(*this);
     }
 
     Room AmplimixLayerImpl::GetInstanceRoom(AmSize index) const

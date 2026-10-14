@@ -59,6 +59,36 @@ namespace SparkyStudios::Audio::Amplitude
         _state->SetLocation(location);
     }
 
+    const Orientation& ChannelInstance::GetOrientation() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetOrientation();
+    }
+
+    void ChannelInstance::SetOrientation(const Orientation& orientation) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetOrientation(orientation);
+    }
+
+    void ChannelInstance::ResetOrientation() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->ResetOrientation();
+    }
+
+    AmVector3 ChannelInstance::GetDirection() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetOrientation().GetForward();
+    }
+
+    AmVector3 ChannelInstance::GetUp() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetOrientation().GetUp();
+    }
+
     Room ChannelInstance::GetRoom() const
     {
         AMPLITUDE_ASSERT(Valid());

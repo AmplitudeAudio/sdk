@@ -23,6 +23,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _parentChannel(nullptr)
         , _location(kVector3Zero)
         , _previousLocation(kVector3Zero)
+        , _orientation(Orientation::Zero())
+        , _hasOrientation(false)
         , _room()
         , _weight(1.0f)
         , _cursor(0)
@@ -38,6 +40,8 @@ namespace SparkyStudios::Audio::Amplitude
         , _parentChannel(parentChannel)
         , _location(kVector3Zero)
         , _previousLocation(kVector3Zero)
+        , _orientation(Orientation::Zero())
+        , _hasOrientation(false)
         , _room()
         , _weight(1.0f)
         , _cursor(0)
@@ -53,6 +57,8 @@ namespace SparkyStudios::Audio::Amplitude
         _instanceId = kAmInvalidObjectId;
         _location = kVector3Zero;
         _previousLocation = kVector3Zero;
+        _orientation = Orientation::Zero();
+        _hasOrientation = false;
         _room.Clear();
         _weight = 1.0f;
         _cursor = 0;
@@ -74,6 +80,33 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _previousLocation = _location;
         _location = location;
+
+        if (_parentChannel != nullptr)
+            _parentChannel->InvalidateInstanceSnapshot();
+    }
+
+    const Orientation& ChannelInstanceInternalState::GetOrientation() const
+    {
+        if (_hasOrientation || _parentChannel == nullptr)
+            return _orientation;
+
+        const Entity& entity = _parentChannel->GetEntity();
+        return entity.Valid() ? entity.GetOrientation() : _orientation;
+    }
+
+    void ChannelInstanceInternalState::SetOrientation(const Orientation& orientation)
+    {
+        _orientation = orientation;
+        _hasOrientation = true;
+
+        if (_parentChannel != nullptr)
+            _parentChannel->InvalidateInstanceSnapshot();
+    }
+
+    void ChannelInstanceInternalState::ResetOrientation()
+    {
+        _orientation = Orientation::Zero();
+        _hasOrientation = false;
 
         if (_parentChannel != nullptr)
             _parentChannel->InvalidateInstanceSnapshot();

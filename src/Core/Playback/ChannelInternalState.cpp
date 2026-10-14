@@ -1331,6 +1331,10 @@ namespace SparkyStudios::Audio::Amplitude
             data.weight = instance.GetWeight();
             data.computedGain = instance.GetComputedGain();
             data.cursor = instance.GetCursor();
+            data.hasOrientation = instance.HasOrientation();
+            if (data.hasOrientation)
+                data.orientation = instance._orientation;
+
             snapshot.push_back(data);
         }
 

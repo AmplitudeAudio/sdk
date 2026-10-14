@@ -19,6 +19,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
+#include <SparkyStudios/Audio/Amplitude/Math/Orientation.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -132,6 +133,46 @@ namespace SparkyStudios::Audio::Amplitude
          * @param[in] location The new world-space position.
          */
         void SetLocation(const AmVector3& location) const;
+
+        /**
+         * @brief Gets the orientation of this instance.
+         *
+         * Until an orientation is set with @c SetOrientation, this is the orientation of the entity
+         * the channel is played on, or a zero orientation when the channel has no entity.
+         *
+         * @return The orientation used to render this instance.
+         */
+        [[nodiscard]] const Orientation& GetOrientation() const;
+
+        /**
+         * @brief Sets the orientation of this instance.
+         *
+         * The orientation is used by the orientation-based parts of the rendering, such as the cone,
+         * box and capsule attenuation shapes and the directivity applied by occlusion. In
+         * @c eChannelInstanceMode_Blended mode, only instances with an orientation set use it.
+         *
+         * @param[in] orientation The new world-space orientation.
+         */
+        void SetOrientation(const Orientation& orientation) const;
+
+        /**
+         * @brief Makes this instance follow the orientation of the channel's entity again.
+         */
+        void ResetOrientation() const;
+
+        /**
+         * @brief Gets the direction vector of this instance.
+         *
+         * @return The forward vector of the instance's orientation.
+         */
+        [[nodiscard]] AmVector3 GetDirection() const;
+
+        /**
+         * @brief Gets the up vector of this instance.
+         *
+         * @return The up vector of the instance's orientation.
+         */
+        [[nodiscard]] AmVector3 GetUp() const;
 
         /**
          * @brief Gets the room associated with this instance.

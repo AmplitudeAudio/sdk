@@ -144,6 +144,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetOcclusion() const override;
         [[nodiscard]] AmReal32 GetPlaySpeed() const override;
         [[nodiscard]] AmVector3 GetLocation() const override;
+        [[nodiscard]] const Orientation& GetOrientation() const override;
         [[nodiscard]] Entity GetEntity() const override;
         [[nodiscard]] Listener GetListener() const override;
         [[nodiscard]] Room GetRoom() const override;
@@ -161,6 +162,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] eChannelInstanceMode GetInstancingMode() const override;
         [[nodiscard]] AmSize GetInstanceCount() const override;
         [[nodiscard]] AmVector3 GetInstanceLocation(AmSize index) const override;
+        [[nodiscard]] bool HasInstanceOrientation(AmSize index) const override;
+        [[nodiscard]] const Orientation& GetInstanceOrientation(AmSize index) const override;
         [[nodiscard]] Room GetInstanceRoom(AmSize index) const override;
         [[nodiscard]] AmReal32 GetInstanceWeight(AmSize index) const override;
         [[nodiscard]] AmReal32 GetInstanceGain(AmSize index) const override;

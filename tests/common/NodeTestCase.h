@@ -17,6 +17,8 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
+#include <optional>
+
 #include <Core/ListenerInternalState.h>
 
 #include "ComponentTestCase.h"
@@ -48,6 +50,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         AmReal32 GetObstruction() const override { return 0.0f; }
         AmReal32 GetOcclusion() const override { return 0.0f; }
         AmVector3 GetLocation() const override { return {}; }
+        const Orientation& GetOrientation() const override { return _zeroOrientation; }
         Entity GetEntity() const override { return {}; }
         Listener GetListener() const override { return {}; }
         Room GetRoom() const override { return {}; }
@@ -66,6 +69,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         Room GetInstanceRoom(AmSize) const override { return {}; }
         AmReal32 GetInstanceWeight(AmSize) const override { return 0.0f; }
         AmReal32 GetInstanceGain(AmSize) const override { return 0.0f; }
+
+    protected:
+        const Orientation _zeroOrientation = Orientation::Zero();
 
     private:
         AmUInt32 _id;
@@ -95,6 +101,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void SetObstruction(AmReal32 obstruction) { _obstruction = obstruction; }
         void SetOcclusion(AmReal32 occlusion) { _occlusion = occlusion; }
 
+        /// Sets the orientation of the processed instance. Without one, the layer follows its entity's orientation.
+        void SetOrientation(const Orientation& orientation) { _orientation = orientation; }
+        void SetInstanceOrientation(AmSize index, const Orientation& orientation) { _instanceOrientations[index] = orientation; }
+
         void SetMultiPosition(bool enabled) { _multiPosition = enabled; }
         void SetSharingPipelineAcrossInstances(bool v) { _sharingPipelineAcrossInstances = v; }
         void AddInstance(const AmVector3& location, AmReal32 weight, AmReal32 gain)
@@ -102,16 +112,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             _instanceLocations.push_back(location);
             _instanceWeights.push_back(weight);
             _instanceGains.push_back(gain);
+            _instanceOrientations.emplace_back(std::nullopt);
         }
         void ClearInstances()
         {
             _instanceLocations.clear();
             _instanceWeights.clear();
             _instanceGains.clear();
+            _instanceOrientations.clear();
         }
 
         eSpatialization GetSpatialization() const override { return _spatialization; }
         AmVector3 GetLocation() const override { return _location; }
+        const Orientation& GetOrientation() const override { return Followed(_orientation); }
         Listener GetListener() const override { return _listener; }
         Entity GetEntity() const override { return _entity; }
         Room GetRoom() const override { return _room; }
@@ -123,11 +136,22 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         bool IsMultiPosition() const override { return _multiPosition; }
         AmSize GetInstanceCount() const override { return _instanceLocations.size(); }
         AmVector3 GetInstanceLocation(AmSize i) const override { return _instanceLocations[i]; }
+        bool HasInstanceOrientation(AmSize i) const override { return _instanceOrientations[i].has_value(); }
+        const Orientation& GetInstanceOrientation(AmSize i) const override { return Followed(_instanceOrientations[i]); }
         AmReal32 GetInstanceWeight(AmSize i) const override { return _instanceWeights[i]; }
         AmReal32 GetInstanceGain(AmSize i) const override { return _instanceGains[i]; }
         bool IsSharingPipelineAcrossInstances() const override { return _sharingPipelineAcrossInstances; }
 
     private:
+        // The explicit orientation when there is one, otherwise the entity's, otherwise zero.
+        const Orientation& Followed(const std::optional<Orientation>& explicitOrientation) const
+        {
+            if (explicitOrientation.has_value())
+                return *explicitOrientation;
+
+            return _entity.Valid() ? _entity.GetOrientation() : _zeroOrientation;
+        }
+
         eSpatialization _spatialization;
         AmVector3 _location;
         Listener _listener;
@@ -143,6 +167,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         std::vector<AmVector3> _instanceLocations;
         std::vector<AmReal32> _instanceWeights;
         std::vector<AmReal32> _instanceGains;
+        std::optional<Orientation> _orientation;
+        std::vector<std::optional<Orientation>> _instanceOrientations;
     };
 
     /**
@@ -172,6 +198,21 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             return GetGain(entity.GetLocation(), listener);
         }
 
+        [[nodiscard]] AmReal32 GetGain(
+            const AmVector3& soundLocation, const Orientation& soundOrientation, const Listener& listener) const override
+        {
+            _orientedGainCount++;
+            _lastOrientation = soundOrientation;
+
+            return GetGain(soundLocation, listener);
+        }
+
+        /// How many times the orientation overload was evaluated.
+        [[nodiscard]] AmUInt32 GetOrientedGainCount() const { return _orientedGainCount; }
+
+        /// The orientation the overload was last evaluated with.
+        [[nodiscard]] const std::optional<Orientation>& GetLastOrientation() const { return _lastOrientation; }
+
         [[nodiscard]] AttenuationZone* GetShape() const override { return nullptr; }
         [[nodiscard]] const Curve& GetGainCurve() const override { static Curve c; return c; }
 
@@ -192,6 +233,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     private:
         AmReal64 _maxDistance;
         AmReal32 _spreadFactor = 1.0f;
+        mutable AmUInt32 _orientedGainCount = 0;
+        mutable std::optional<Orientation> _lastOrientation;
     };
 
     /**

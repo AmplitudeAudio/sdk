@@ -162,6 +162,19 @@ namespace SparkyStudios::Audio::Amplitude
         virtual AmVector3 GetLocation() const = 0;
 
         /**
+         * @brief Gets the orientation of the audio data in the layer.
+         *
+         * For a separate-mode instance that has an explicit orientation, this is the instance's orientation.
+         * Otherwise it is the orientation of the @c Entity this layer is associated with, or a zero orientation
+         * when the layer has no entity.
+         *
+         * @return The orientation of the audio data in the layer.
+         *
+         * @see ChannelInstance::SetOrientation, Entity::SetOrientation
+         */
+        [[nodiscard]] virtual const Orientation& GetOrientation() const = 0;
+
+        /**
          * @brief Gets the entity associated with the audio data in the layer.
          *
          * @return The entity associated with the audio data in the layer. If the layer is not associated with
@@ -318,6 +331,38 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The world-space location of the instance.
          */
         [[nodiscard]] virtual AmVector3 GetInstanceLocation(AmSize index) const = 0;
+
+        /**
+         * @brief Tells whether a specific instance has an explicit orientation.
+         *
+         * Instances without one follow the orientation of the layer's entity, which orientation-based
+         * processing must not apply to instances placed at arbitrary world positions.
+         *
+         * @param[in] index The instance index.
+         *
+         * @return @c true if the instance has an explicit orientation, @c false otherwise.
+         */
+        [[nodiscard]] virtual bool HasInstanceOrientation(AmSize index) const
+        {
+            AM_UNUSED(index);
+
+            return false;
+        }
+
+        /**
+         * @brief Gets the orientation of a specific instance.
+         *
+         * @param[in] index The instance index.
+         *
+         * @return The explicit orientation of the instance if it has one, otherwise the entity's orientation,
+         * or a zero orientation when the layer has no entity.
+         */
+        [[nodiscard]] virtual const Orientation& GetInstanceOrientation(AmSize index) const
+        {
+            AM_UNUSED(index);
+
+            return GetOrientation();
+        }
 
         /**
          * @brief Gets the room associated with a specific instance.

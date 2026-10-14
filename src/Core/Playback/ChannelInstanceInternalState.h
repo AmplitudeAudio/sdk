@@ -44,6 +44,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 weight;
         AmReal32 computedGain;
         AmUInt64 cursor; ///< Initial cursor, used when a layer (re)discovers the instance (separate mode).
+        Orientation orientation = Orientation::Zero(); ///< Explicit orientation, meaningful only when @c hasOrientation.
+        bool hasOrientation = false; ///< Whether the instance has an explicit orientation, else it follows the entity's.
     };
 
     /**
@@ -171,6 +173,37 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AM_INLINE const AmVector3& GetPreviousLocation() const
         {
             return _previousLocation;
+        }
+
+        /**
+         * @brief Gets the orientation used to render this instance.
+         *
+         * @return The explicit orientation when one was set, else the one of the parent channel's entity,
+         * else a zero orientation.
+         */
+        [[nodiscard]] const Orientation& GetOrientation() const;
+
+        /**
+         * @brief Sets an explicit orientation for this instance.
+         *
+         * Marks the parent channel's instance snapshot stale. It is republished once per frame,
+         * from the channel's @c AdvanceFrame.
+         *
+         * @param orientation The new world-space orientation.
+         */
+        void SetOrientation(const Orientation& orientation);
+
+        /**
+         * @brief Drops the explicit orientation, so the instance follows the parent channel's entity again.
+         */
+        void ResetOrientation();
+
+        /**
+         * @brief Checks whether an explicit orientation was set on this instance.
+         */
+        [[nodiscard]] AM_INLINE bool HasOrientation() const
+        {
+            return _hasOrientation;
         }
 
         /**
@@ -342,6 +375,10 @@ namespace SparkyStudios::Audio::Amplitude
         // Position
         AmVector3 _location;
         AmVector3 _previousLocation;
+
+        // Explicit orientation, meaningful only when _hasOrientation is set
+        Orientation _orientation;
+        bool _hasOrientation;
 
         // Environment
         Room _room;

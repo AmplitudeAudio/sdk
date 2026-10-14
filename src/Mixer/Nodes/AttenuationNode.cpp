@@ -231,7 +231,12 @@ namespace SparkyStudios::Audio::Amplitude
                     {
                         const AmVector3 location = layer->GetInstanceLocation(i);
                         const AmReal32 weight = layer->GetInstanceWeight(i);
-                        const AmReal32 instanceGain = attenuation->GetGain(location, listener);
+
+                        // Instances are placed at arbitrary world positions, so the entity's orientation would be
+                        // meaningless for them: only an orientation set on the instance itself is applied.
+                        const AmReal32 instanceGain = layer->HasInstanceOrientation(i)
+                            ? attenuation->GetGain(location, layer->GetInstanceOrientation(i), listener)
+                            : attenuation->GetGain(location, listener);
 
                         blendedGain += instanceGain * weight;
                         weightedLocation = Add(weightedLocation, Scale(location, weight));
@@ -260,12 +265,11 @@ namespace SparkyStudios::Audio::Amplitude
                     if (spatialization == eSpatialization_PositionOrientation)
                     {
                         AMPLITUDE_ASSERT(entity.Valid());
-                        targetGain *= attenuation->GetGain(
-                            effectiveLocation, entity.Valid() ? entity.GetOrientation() : Orientation::Zero(), listener);
+                        targetGain *= attenuation->GetGain(effectiveLocation, layer->GetOrientation(), listener);
                     }
                     else if (spatialization == eSpatialization_HRTF && entity.Valid())
                     {
-                        targetGain *= attenuation->GetGain(effectiveLocation, entity.GetOrientation(), listener);
+                        targetGain *= attenuation->GetGain(effectiveLocation, layer->GetOrientation(), listener);
                     }
                     else if (spatialization == eSpatialization_Position)
                     {
