@@ -646,6 +646,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::AdvanceFrame([[maybe_unused]] AmTime deltaTime)
     {
+        // Before the paused/stopped early out: property changes made while paused still have to reach the mixer.
+        FlushInstanceSnapshot();
+
         if (_hasScheduledCommand && _engine->GetAudioClock() >= _scheduledCommandFrame)
             ActivateScheduledCommand();
 
@@ -1173,6 +1176,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::EnableInstancing(eChannelInstanceMode mode)
     {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
         if (_instancingEnabled)
             return; // Already enabled
 
@@ -1185,6 +1190,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::DisableInstancing()
     {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
         if (!_instancingEnabled)
             return;
 
@@ -1197,6 +1204,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     ChannelInstanceInternalState* ChannelInternalState::AddInstance(const AmVector3& location)
     {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
         if (!_instancingEnabled)
             return nullptr;
 
@@ -1228,6 +1237,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::RemoveInstance(AmChannelInstanceID instanceId)
     {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
         auto it = _instancesMap.find(instanceId);
         if (it == _instancesMap.end())
             return;
@@ -1244,6 +1255,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::ClearInstances()
     {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
         while (!_instances.empty())
         {
             ChannelInstanceInternalState& instance = _instances.front();
@@ -1257,8 +1270,23 @@ namespace SparkyStudios::Audio::Amplitude
         PublishInstanceSnapshot();
     }
 
+    void ChannelInternalState::FlushInstanceSnapshot()
+    {
+        if (_instanceSnapshotState.dirty.load(std::memory_order_acquire))
+            PublishInstanceSnapshot();
+    }
+
     void ChannelInternalState::PublishInstanceSnapshot()
     {
+        const std::lock_guard<std::recursive_mutex> lock(_instanceSnapshotState.mutex);
+
+        // Cleared before the rebuild: a property changed meanwhile marks it again and is published by the next flush.
+        _instanceSnapshotState.dirty.store(false, std::memory_order_release);
+
+#ifdef AM_TESTING
+        ++_instanceSnapshotPublishCount;
+#endif
+
         // Lazily allocate the cursor write-back slots. Only instanced channels pay for it.
         if (_instancingEnabled && _instanceSnapshotState.cursors == nullptr)
         {

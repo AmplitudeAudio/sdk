@@ -76,7 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
         _location = location;
 
         if (_parentChannel != nullptr)
-            _parentChannel->PublishInstanceSnapshot();
+            _parentChannel->InvalidateInstanceSnapshot();
     }
 
     void ChannelInstanceInternalState::SetRoom(const Room& room)
@@ -84,7 +84,7 @@ namespace SparkyStudios::Audio::Amplitude
         _room = room;
 
         if (_parentChannel != nullptr)
-            _parentChannel->PublishInstanceSnapshot();
+            _parentChannel->InvalidateInstanceSnapshot();
     }
 
     void ChannelInstanceInternalState::SetWeight(AmReal32 weight)
@@ -92,7 +92,7 @@ namespace SparkyStudios::Audio::Amplitude
         _weight = AM_MAX(weight, 0.0f);
 
         if (_parentChannel != nullptr)
-            _parentChannel->PublishInstanceSnapshot();
+            _parentChannel->InvalidateInstanceSnapshot();
     }
 
     void ChannelInstanceInternalState::AdvanceCursor(AmUInt64 frames, AmUInt64 soundLength, bool loop)

@@ -122,6 +122,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 }));
             drain();
 
+            // The drain happens in the frame that follows. Wait for it, so both cursors are read once it is complete.
+            amEngine->WaitUntilFrames(2);
+
             const AmUInt64 cursorA = a.GetState()->GetCursor();
             const AmUInt64 cursorB = b.GetState()->GetCursor();
 

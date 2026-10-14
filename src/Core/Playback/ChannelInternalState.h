@@ -21,6 +21,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include <mutex>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 
@@ -584,10 +585,41 @@ namespace SparkyStudios::Audio::Amplitude
          * Rebuilds the back buffer from the authoritative instance list, drains the
          * cursor write-back slots, then atomically swaps the published index.
          *
-         * @note Game thread only. Must be called after every mutation of the instance
-         * containers or of any instance's published properties.
+         * @note Serialized with the instance container operations and with @c FlushInstanceSnapshot.
+         * Must be called after every mutation of the instance containers. Changes to an instance's
+         * published properties are batched instead, see @c InvalidateInstanceSnapshot.
          */
         void PublishInstanceSnapshot();
+
+        /**
+         * @brief Marks the published snapshot as stale after an instance property changed.
+         *
+         * The snapshot is rebuilt once by @c FlushInstanceSnapshot, so updating many instances
+         * in a frame costs a single rebuild rather than one per setter.
+         *
+         * @note Not for the audio thread.
+         */
+        AM_INLINE void InvalidateInstanceSnapshot()
+        {
+            _instanceSnapshotState.dirty.store(true, std::memory_order_release);
+        }
+
+        /**
+         * @brief Publishes the instance snapshot if an instance property changed since the last publish.
+         *
+         * @note Not for the audio thread. Called once per frame from @c AdvanceFrame.
+         */
+        void FlushInstanceSnapshot();
+
+#ifdef AM_TESTING
+        /**
+         * @brief Gets how many snapshots have been published, to observe batching in tests.
+         */
+        [[nodiscard]] AM_INLINE AmUInt64 GetInstanceSnapshotPublishCountForTesting() const
+        {
+            return _instanceSnapshotPublishCount;
+        }
+#endif
 
         /**
          * @brief Acquires the latest published instance snapshot.
@@ -764,12 +796,14 @@ namespace SparkyStudios::Audio::Amplitude
                 : snapshots(std::move(other.snapshots))
                 , publishedSnapshot(other.publishedSnapshot.load(std::memory_order_relaxed))
                 , cursors(std::move(other.cursors))
+                , dirty(other.dirty.load(std::memory_order_relaxed))
             {}
             InstanceSnapshotState& operator=(InstanceSnapshotState&& other) noexcept
             {
                 snapshots = std::move(other.snapshots);
                 publishedSnapshot.store(other.publishedSnapshot.load(std::memory_order_relaxed), std::memory_order_relaxed);
                 cursors = std::move(other.cursors);
+                dirty.store(other.dirty.load(std::memory_order_relaxed), std::memory_order_relaxed);
                 return *this;
             }
 
@@ -783,6 +817,13 @@ namespace SparkyStudios::Audio::Amplitude
             // them). Deliberately never freed while the channel is alive: the audio thread
             // may hold the pointer across a callback boundary. Released with the state.
             std::unique_ptr<ChannelInstanceCursorSlot[]> cursors;
+
+            // Set when an instance property changed since the snapshot was last published.
+            std::atomic<bool> dirty{ false };
+
+            // Serializes publishing and the instance containers. The thread driving AdvanceFrame flushes the
+            // snapshot, while instances may be added and removed from another thread.
+            std::recursive_mutex mutex;
         };
 
         // Multi-position instancing
@@ -793,6 +834,10 @@ namespace SparkyStudios::Audio::Amplitude
         std::unordered_map<AmChannelInstanceID, ChannelInstanceInternalState*> _instancesMap;
 
         InstanceSnapshotState _instanceSnapshotState;
+
+#ifdef AM_TESTING
+        AmUInt64 _instanceSnapshotPublishCount = 0;
+#endif
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

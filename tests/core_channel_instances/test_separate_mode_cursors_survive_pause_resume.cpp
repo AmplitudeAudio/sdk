@@ -42,8 +42,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             ChannelInstance instance = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
             AM_EXPECT(instance.Valid());
 
-            // The audio thread writes the instance cursor back once per mix; each publish (forced here by
-            // moving the instance) drains it into the channel state where the test can observe it.
+            // The audio thread writes the instance cursor back once per mix; each publish (requested here by
+            // moving the instance, performed by the next frame) drains it into the channel state where the test
+            // can observe it.
             AmReal32 x = 100.0f;
             auto drainedCursor = [&]()
             {

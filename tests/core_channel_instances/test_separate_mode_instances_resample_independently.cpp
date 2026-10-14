@@ -83,7 +83,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             channel.Resume();
 
-            // Each publish (forced by moving an instance) drains the audio thread's cursor write-backs.
+            // Each publish (requested by moving an instance, performed by the next frame) drains the audio thread's
+            // cursor write-backs.
             AmReal32 x = 10.0f;
             const auto drain = [&]()
             {
@@ -106,6 +107,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     return VoicesPaused(channel);
                 }));
             drain();
+
+            // The drain happens in the frame that follows. Wait for it, so both cursors are read once it is complete.
+            amEngine->WaitUntilFrames(2);
 
             const AmUInt64 cursorA = a.GetState()->GetCursor();
             const AmUInt64 cursorB = b.GetState()->GetCursor();

@@ -156,7 +156,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the world location of this instance.
          *
-         * Publishes a new instance snapshot on the parent channel.
+         * Marks the parent channel's instance snapshot stale. It is republished once per frame,
+         * from the channel's @c AdvanceFrame.
          *
          * @param location The new world-space position.
          */
@@ -185,6 +186,9 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the room associated with this instance.
          *
+         * Marks the parent channel's instance snapshot stale. It is republished once per frame,
+         * from the channel's @c AdvanceFrame.
+         *
          * @param room The room to associate.
          */
         void SetRoom(const Room& room);
@@ -202,7 +206,8 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the attenuation weight for blended mode.
          *
-         * Publishes a new instance snapshot on the parent channel.
+         * Marks the parent channel's instance snapshot stale. It is republished once per frame,
+         * from the channel's @c AdvanceFrame.
          *
          * @param weight The weight (clamped to be non-negative).
          */
