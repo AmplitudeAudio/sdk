@@ -186,6 +186,15 @@ namespace SparkyStudios::Audio::Amplitude
         void UpdateInstanceData();
 
         /**
+         * @brief Recomputes the obstruction and occlusion a blended channel is rendered with.
+         *
+         * In blended mode, the instances are one sound: when some have an obstruction or an occlusion of their own,
+         * the layer's values are their average, weighted by what each contributes to what the listener hears (its
+         * weight scaled by the attenuation at its distance). Called once per block by UpdateInstanceData().
+         */
+        void UpdateBlendedInstanceValues();
+
+        /**
          * @brief Cached instance data for multi-position processing.
          */
         std::vector<InstanceData> instanceData;
@@ -215,6 +224,13 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief The index of the current instance being processed (separate mode).
          */
         AmSize currentInstanceIndex = 0;
+
+        // Blended-mode obstruction and occlusion, audio thread. Valid only while the flag is set: it is when some
+        // instance has a value of its own, otherwise the layer's own value applies.
+        AmReal32 blendedObstruction = 0.0f;
+        AmReal32 blendedOcclusion = 0.0f;
+        bool hasBlendedObstruction = false;
+        bool hasBlendedOcclusion = false;
     };
 
     struct MixerCommand

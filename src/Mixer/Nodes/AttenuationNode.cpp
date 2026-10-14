@@ -16,6 +16,7 @@
 
 #include <Core/EngineInternalState.h>
 #include <DSP/Gain.h>
+#include <Mixer/InstanceBlending.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -232,11 +233,8 @@ namespace SparkyStudios::Audio::Amplitude
                         const AmVector3 location = layer->GetInstanceLocation(i);
                         const AmReal32 weight = layer->GetInstanceWeight(i);
 
-                        // Instances are placed at arbitrary world positions, so the entity's orientation would be
-                        // meaningless for them: only an orientation set on the instance itself is applied.
-                        const AmReal32 instanceGain = layer->HasInstanceOrientation(i)
-                            ? attenuation->GetGain(location, layer->GetInstanceOrientation(i), listener)
-                            : attenuation->GetGain(location, listener);
+                        const AmReal32 instanceGain = ComputeInstanceGain(
+                            *attenuation, listener, location, layer->HasInstanceOrientation(i) ? &layer->GetInstanceOrientation(i) : nullptr);
 
                         blendedGain += instanceGain * weight;
                         weightedLocation = Add(weightedLocation, Scale(location, weight));

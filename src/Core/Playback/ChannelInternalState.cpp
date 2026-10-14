@@ -1335,6 +1335,14 @@ namespace SparkyStudios::Audio::Amplitude
             if (data.hasOrientation)
                 data.orientation = instance._orientation;
 
+            data.hasObstruction = instance.HasObstruction();
+            if (data.hasObstruction)
+                data.obstruction = instance._obstruction;
+
+            data.hasOcclusion = instance.HasOcclusion();
+            if (data.hasOcclusion)
+                data.occlusion = instance._occlusion;
+
             snapshot.push_back(data);
         }
 

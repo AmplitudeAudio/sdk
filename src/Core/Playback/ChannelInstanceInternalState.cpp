@@ -25,6 +25,10 @@ namespace SparkyStudios::Audio::Amplitude
         , _previousLocation(kVector3Zero)
         , _orientation(Orientation::Zero())
         , _hasOrientation(false)
+        , _obstruction(0.0f)
+        , _hasObstruction(false)
+        , _occlusion(0.0f)
+        , _hasOcclusion(false)
         , _room()
         , _weight(1.0f)
         , _cursor(0)
@@ -42,6 +46,10 @@ namespace SparkyStudios::Audio::Amplitude
         , _previousLocation(kVector3Zero)
         , _orientation(Orientation::Zero())
         , _hasOrientation(false)
+        , _obstruction(0.0f)
+        , _hasObstruction(false)
+        , _occlusion(0.0f)
+        , _hasOcclusion(false)
         , _room()
         , _weight(1.0f)
         , _cursor(0)
@@ -59,6 +67,10 @@ namespace SparkyStudios::Audio::Amplitude
         _previousLocation = kVector3Zero;
         _orientation = Orientation::Zero();
         _hasOrientation = false;
+        _obstruction = 0.0f;
+        _hasObstruction = false;
+        _occlusion = 0.0f;
+        _hasOcclusion = false;
         _room.Clear();
         _weight = 1.0f;
         _cursor = 0;
@@ -107,6 +119,60 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _orientation = Orientation::Zero();
         _hasOrientation = false;
+
+        if (_parentChannel != nullptr)
+            _parentChannel->InvalidateInstanceSnapshot();
+    }
+
+    AmReal32 ChannelInstanceInternalState::GetObstruction() const
+    {
+        if (_hasObstruction || _parentChannel == nullptr)
+            return _obstruction;
+
+        const Entity& entity = _parentChannel->GetEntity();
+        return entity.Valid() ? entity.GetObstruction() : _obstruction;
+    }
+
+    void ChannelInstanceInternalState::SetObstruction(AmReal32 obstruction)
+    {
+        _obstruction = obstruction;
+        _hasObstruction = true;
+
+        if (_parentChannel != nullptr)
+            _parentChannel->InvalidateInstanceSnapshot();
+    }
+
+    void ChannelInstanceInternalState::ResetObstruction()
+    {
+        _obstruction = 0.0f;
+        _hasObstruction = false;
+
+        if (_parentChannel != nullptr)
+            _parentChannel->InvalidateInstanceSnapshot();
+    }
+
+    AmReal32 ChannelInstanceInternalState::GetOcclusion() const
+    {
+        if (_hasOcclusion || _parentChannel == nullptr)
+            return _occlusion;
+
+        const Entity& entity = _parentChannel->GetEntity();
+        return entity.Valid() ? entity.GetOcclusion() : _occlusion;
+    }
+
+    void ChannelInstanceInternalState::SetOcclusion(AmReal32 occlusion)
+    {
+        _occlusion = occlusion;
+        _hasOcclusion = true;
+
+        if (_parentChannel != nullptr)
+            _parentChannel->InvalidateInstanceSnapshot();
+    }
+
+    void ChannelInstanceInternalState::ResetOcclusion()
+    {
+        _occlusion = 0.0f;
+        _hasOcclusion = false;
 
         if (_parentChannel != nullptr)
             _parentChannel->InvalidateInstanceSnapshot();

@@ -19,6 +19,7 @@
 #include <Core/Engine.h>
 #include <Core/Playback/ChannelInternalState.h>
 #include <Mixer/Amplimix.h>
+#include <Mixer/InstanceBlending.h>
 #include <Mixer/Pipeline.h>
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, (C), std::memory_order_release)
@@ -1331,11 +1332,33 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmReal32 AmplimixLayerImpl::GetObstruction() const
     {
+        if (processingInstance)
+        {
+            // Separate mode: an instance with a value of its own is obstructed by it only.
+            if (currentInstanceIndex < instanceData.size() && instanceData[currentInstanceIndex].hasObstruction)
+                return instanceData[currentInstanceIndex].obstruction;
+        }
+        else if (hasBlendedObstruction)
+        {
+            return blendedObstruction;
+        }
+
         return AMPLIMIX_LOAD_RELAXED(&obstruction);
     }
 
     AmReal32 AmplimixLayerImpl::GetOcclusion() const
     {
+        if (processingInstance)
+        {
+            // Separate mode: an instance with a value of its own is occluded by it only.
+            if (currentInstanceIndex < instanceData.size() && instanceData[currentInstanceIndex].hasOcclusion)
+                return instanceData[currentInstanceIndex].occlusion;
+        }
+        else if (hasBlendedOcclusion)
+        {
+            return blendedOcclusion;
+        }
+
         return AMPLIMIX_LOAD_RELAXED(&occlusion);
     }
 
@@ -1567,10 +1590,44 @@ namespace SparkyStudios::Audio::Amplitude
         return processingInstance && sharedInstancePipeline;
     }
 
+    void AmplimixLayerImpl::UpdateBlendedInstanceValues()
+    {
+        hasBlendedObstruction = false;
+        hasBlendedOcclusion = false;
+
+        // Separate-mode instances are processed one by one, with their own values.
+        if (instanceData.empty() || GetInstancingMode() != eChannelInstanceMode_Blended)
+            return;
+
+        const Listener listener = GetListener();
+        const Attenuation* attenuation = GetAttenuation();
+
+        // The audible gain of an instance, as the blended attenuation computes it. Without attenuation, or without a
+        // listener, every instance counts with its weight alone.
+        const auto gain = [&](const InstanceData& instance) -> AmReal32
+        {
+            if (attenuation == nullptr || !listener.Valid())
+                return 1.0f;
+
+            return ComputeInstanceGain(*attenuation, listener, instance.location, instance.hasOrientation ? &instance.orientation : nullptr);
+        };
+
+        hasBlendedObstruction = BlendInstanceValues(
+            instanceData, AMPLIMIX_LOAD_RELAXED(&obstruction), &InstanceData::obstruction, &InstanceData::hasObstruction, gain,
+            blendedObstruction);
+
+        hasBlendedOcclusion = BlendInstanceValues(
+            instanceData, AMPLIMIX_LOAD_RELAXED(&occlusion), &InstanceData::occlusion, &InstanceData::hasOcclusion, gain,
+            blendedOcclusion);
+    }
+
     void AmplimixLayerImpl::UpdateInstanceData()
     {
         previousInstanceData.clear();
         previousInstanceData.swap(instanceData);
+
+        hasBlendedObstruction = false;
+        hasBlendedOcclusion = false;
 
         if (snd == nullptr || snd->sound == nullptr)
             return;
@@ -1603,5 +1660,7 @@ namespace SparkyStudios::Audio::Amplitude
 
             instanceData.push_back(data);
         }
+
+        UpdateBlendedInstanceValues();
     }
 } // namespace SparkyStudios::Audio::Amplitude

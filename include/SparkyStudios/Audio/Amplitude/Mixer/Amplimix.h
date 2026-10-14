@@ -122,9 +122,13 @@ namespace SparkyStudios::Audio::Amplitude
          * This value is useful only when the layer is associated with a sound instance that has spatialization enabled. You
          * can update this value using the @c SetObstruction method from the @c Entity this layer is associated with.
          *
+         * On a multi-position channel, instances can have an obstruction of their own. While a separate-mode instance
+         * is processed, this is its obstruction. For a blended channel, it is the average of the instances' obstructions,
+         * weighted by what each contributes to what the listener hears. Instances without one count with the entity's.
+         *
          * @return The obstruction amount of the audio data in the layer.
          *
-         * @see Entity::SetObstruction, Entity::GetObstruction
+         * @see Entity::SetObstruction, Entity::GetObstruction, ChannelInstance::SetObstruction
          */
         virtual AmReal32 GetObstruction() const = 0;
 
@@ -134,9 +138,13 @@ namespace SparkyStudios::Audio::Amplitude
          * This value is useful only when the layer is associated with a sound instance that has spatialization enabled. You
          * can update this value using the @c SetOcclusion method from the @c Entity this layer is associated with.
          *
+         * On a multi-position channel, instances can have an occlusion of their own, which is applied the same way as
+         * the obstruction: the instance's while a separate-mode instance is processed, the weighted average of the
+         * instances' for a blended channel.
+         *
          * @return The occlusion amount of the audio data in the layer.
          *
-         * @see Entity::SetOcclusion, Entity::GetOcclusion
+         * @see Entity::SetOcclusion, Entity::GetOcclusion, ChannelInstance::SetOcclusion
          */
         virtual AmReal32 GetOcclusion() const = 0;
 

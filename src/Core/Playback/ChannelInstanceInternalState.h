@@ -46,6 +46,10 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 cursor; ///< Initial cursor, used when a layer (re)discovers the instance (separate mode).
         Orientation orientation = Orientation::Zero(); ///< Explicit orientation, meaningful only when @c hasOrientation.
         bool hasOrientation = false; ///< Whether the instance has an explicit orientation, else it follows the entity's.
+        AmReal32 obstruction = 0.0f; ///< Explicit obstruction, meaningful only when @c hasObstruction.
+        bool hasObstruction = false; ///< Whether the instance has an explicit obstruction, else it follows the entity's.
+        AmReal32 occlusion = 0.0f; ///< Explicit occlusion, meaningful only when @c hasOcclusion.
+        bool hasOcclusion = false; ///< Whether the instance has an explicit occlusion, else it follows the entity's.
     };
 
     /**
@@ -204,6 +208,66 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AM_INLINE bool HasOrientation() const
         {
             return _hasOrientation;
+        }
+
+        /**
+         * @brief Gets the obstruction applied to this instance.
+         *
+         * @return The explicit obstruction when one was set, else the one of the parent channel's entity, else 0.
+         */
+        [[nodiscard]] AmReal32 GetObstruction() const;
+
+        /**
+         * @brief Sets an explicit obstruction for this instance.
+         *
+         * Marks the parent channel's instance snapshot stale. It is republished once per frame,
+         * from the channel's @c AdvanceFrame.
+         *
+         * @param obstruction The obstruction amount.
+         */
+        void SetObstruction(AmReal32 obstruction);
+
+        /**
+         * @brief Drops the explicit obstruction, so the instance follows the parent channel's entity again.
+         */
+        void ResetObstruction();
+
+        /**
+         * @brief Checks whether an explicit obstruction was set on this instance.
+         */
+        [[nodiscard]] AM_INLINE bool HasObstruction() const
+        {
+            return _hasObstruction;
+        }
+
+        /**
+         * @brief Gets the occlusion applied to this instance.
+         *
+         * @return The explicit occlusion when one was set, else the one of the parent channel's entity, else 0.
+         */
+        [[nodiscard]] AmReal32 GetOcclusion() const;
+
+        /**
+         * @brief Sets an explicit occlusion for this instance.
+         *
+         * Marks the parent channel's instance snapshot stale. It is republished once per frame,
+         * from the channel's @c AdvanceFrame.
+         *
+         * @param occlusion The occlusion amount.
+         */
+        void SetOcclusion(AmReal32 occlusion);
+
+        /**
+         * @brief Drops the explicit occlusion, so the instance follows the parent channel's entity again.
+         */
+        void ResetOcclusion();
+
+        /**
+         * @brief Checks whether an explicit occlusion was set on this instance.
+         */
+        [[nodiscard]] AM_INLINE bool HasOcclusion() const
+        {
+            return _hasOcclusion;
         }
 
         /**
@@ -379,6 +443,12 @@ namespace SparkyStudios::Audio::Amplitude
         // Explicit orientation, meaningful only when _hasOrientation is set
         Orientation _orientation;
         bool _hasOrientation;
+
+        // Explicit obstruction and occlusion, meaningful only when their flag is set
+        AmReal32 _obstruction;
+        bool _hasObstruction;
+        AmReal32 _occlusion;
+        bool _hasOcclusion;
 
         // Environment
         Room _room;

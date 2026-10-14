@@ -89,6 +89,42 @@ namespace SparkyStudios::Audio::Amplitude
         return _state->GetOrientation().GetUp();
     }
 
+    AmReal32 ChannelInstance::GetObstruction() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetObstruction();
+    }
+
+    void ChannelInstance::SetObstruction(AmReal32 obstruction) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetObstruction(obstruction);
+    }
+
+    void ChannelInstance::ResetObstruction() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->ResetObstruction();
+    }
+
+    AmReal32 ChannelInstance::GetOcclusion() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        return _state->GetOcclusion();
+    }
+
+    void ChannelInstance::SetOcclusion(AmReal32 occlusion) const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->SetOcclusion(occlusion);
+    }
+
+    void ChannelInstance::ResetOcclusion() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->ResetOcclusion();
+    }
+
     Room ChannelInstance::GetRoom() const
     {
         AMPLITUDE_ASSERT(Valid());

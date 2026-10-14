@@ -175,6 +175,67 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmVector3 GetUp() const;
 
         /**
+         * @brief Gets the obstruction applied to this instance.
+         *
+         * Until an obstruction is set with @c SetObstruction, this is the obstruction of the entity the channel is
+         * played on, or 0 when the channel has no entity.
+         *
+         * @return The obstruction amount.
+         */
+        [[nodiscard]] AmReal32 GetObstruction() const;
+
+        /**
+         * @brief Sets the obstruction of this instance.
+         *
+         * Once set, the instance is obstructed by this value only: the obstruction of the entity no longer applies
+         * to it. This lets each position of a multi-position channel have its own line of sight to the listener.
+         *
+         * In @c eChannelInstanceMode_Separate mode, each instance is processed on its own with its obstruction.
+         * In @c eChannelInstanceMode_Blended mode, the instances are one sound: the obstruction applied is the
+         * average of the instances' obstructions, weighted by how much each one contributes to what the listener
+         * hears, which is its weight scaled by the attenuation at its distance to the listener. An instance without
+         * an obstruction of its own counts with the entity's.
+         *
+         * @param[in] obstruction The obstruction amount.
+         *
+         * @see Entity::SetObstruction
+         */
+        void SetObstruction(AmReal32 obstruction) const;
+
+        /**
+         * @brief Makes this instance follow the obstruction of the channel's entity again.
+         */
+        void ResetObstruction() const;
+
+        /**
+         * @brief Gets the occlusion applied to this instance.
+         *
+         * Until an occlusion is set with @c SetOcclusion, this is the occlusion of the entity the channel is
+         * played on, or 0 when the channel has no entity.
+         *
+         * @return The occlusion amount.
+         */
+        [[nodiscard]] AmReal32 GetOcclusion() const;
+
+        /**
+         * @brief Sets the occlusion of this instance.
+         *
+         * It follows the same rules as @c SetObstruction: once set, the entity's occlusion no longer applies to
+         * the instance, and in @c eChannelInstanceMode_Blended mode the occlusions of the instances are averaged,
+         * weighted by their contribution to what the listener hears.
+         *
+         * @param[in] occlusion The occlusion amount.
+         *
+         * @see Entity::SetOcclusion
+         */
+        void SetOcclusion(AmReal32 occlusion) const;
+
+        /**
+         * @brief Makes this instance follow the occlusion of the channel's entity again.
+         */
+        void ResetOcclusion() const;
+
+        /**
          * @brief Gets the room associated with this instance.
          *
          * The room is used for per-instance environmental effects such as
