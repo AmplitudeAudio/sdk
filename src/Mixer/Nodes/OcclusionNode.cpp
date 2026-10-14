@@ -24,7 +24,16 @@ namespace SparkyStudios::Audio::Amplitude
     // The value below has been calculated empirically.
     constexpr AmReal32 kOcclusionSmoothingCoefficient = 0.75f;
 
-    AM_INLINE AmReal32 CalculateDirectivity(AmReal32 alpha, AmReal32 order, const SphericalPosition& position)
+    /**
+     * @brief Computes the directivity of a source, as seen from a given direction.
+     *
+     * @param[in] alpha The weight of the directional part, in [0, 1]: 0 is omnidirectional, 0.5 a cardioid and 1 a
+     * figure-of-eight.
+     * @param[in] order The sharpness of the lobe.
+     * @param[in] localDirection The direction to the other party, in the frame of the source. In that frame, forward
+     * is +Y, and the lobe is centered on it.
+     */
+    AM_INLINE AmReal32 CalculateDirectivity(AmReal32 alpha, AmReal32 order, const AmVector3& localDirection)
     {
         // Clamp alpha weighting.
         const AmReal32 alphaClamped = AM_CLAMP(alpha, 0.0f, 1.0f);
@@ -33,7 +42,13 @@ namespace SparkyStudios::Audio::Amplitude
         if (alphaClamped < kEpsilon)
             return 1.0f;
 
-        const AmReal32 gain = (1.0f - alphaClamped) + alphaClamped * (std::cos(position.GetAzimuth()) * std::cos(position.GetElevation()));
+        // Coincident positions have no direction: they are on-axis.
+        const AmReal32 distance = Length(localDirection);
+        if (distance < kEpsilon)
+            return 1.0f;
+
+        const AmReal32 cosToForward = AM_CLAMP(localDirection.y / distance, -1.0f, 1.0f);
+        const AmReal32 gain = (1.0f - alphaClamped) + alphaClamped * cosToForward;
 
         return std::pow(std::abs(gain), std::max(order, 1.0f));
     }
@@ -73,18 +88,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (!listener.Valid())
             return nullptr;
 
-        // Compute the relative listener/source direction in spherical angles.
-        AmVector3 direction = GetRelativeDirection(listener.GetLocation(), listener.GetOrientation().GetQuaternion(), layer->GetLocation());
-        const SphericalPosition listenerDirection = SphericalPosition::FromWorldSpace(direction);
-        const AmReal32 listenerDirectivity =
-            CalculateDirectivity(listener.GetDirectivity(), listener.GetDirectivitySharpness(), listenerDirection);
+        // The layer location and orientation are the instance's when a separate-mode instance is being processed.
+        const AmVector3 sourceLocation = layer->GetLocation();
+
+        // The direction of the source in the listener's frame, where the listener's lobe points forward.
+        AmVector3 direction = GetRelativeDirection(listener.GetLocation(), listener.GetOrientation().GetQuaternion(), sourceLocation);
+        const AmReal32 listenerDirectivity = CalculateDirectivity(listener.GetDirectivity(), listener.GetDirectivitySharpness(), direction);
 
         AmReal32 soundDirectivity = 1.0f;
         if (entity.Valid())
         {
-            direction = GetRelativeDirection(entity.GetLocation(), entity.GetOrientation().GetQuaternion(), listener.GetLocation());
-            const SphericalPosition entityDirection = SphericalPosition::FromWorldSpace(direction);
-            soundDirectivity = CalculateDirectivity(entity.GetDirectivity(), entity.GetDirectivitySharpness(), entityDirection);
+            // The direction of the listener in the source's frame, where the source's lobe points forward.
+            direction = GetRelativeDirection(sourceLocation, layer->GetOrientation().GetQuaternion(), listener.GetLocation());
+            soundDirectivity = CalculateDirectivity(entity.GetDirectivity(), entity.GetDirectivitySharpness(), direction);
         }
 
         const auto& lpfCurve = Engine::GetInstance()->GetOcclusionCoefficientCurve();

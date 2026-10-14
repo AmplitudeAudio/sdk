@@ -166,7 +166,11 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the directivity and sharpness of sounds played by this entity.
          *
-         * @param[in] directivity The directivity of the sound source, in the range [0, 1].
+         * The lobe points along the forward axis of the entity's orientation, so the sound is heard louder in front
+         * of the entity than behind or beside it. It is applied by the occlusion filter.
+         *
+         * @param[in] directivity The directivity of the sound source, in the range [0, 1]. 0 is omnidirectional, 0.5
+         * is a cardioid, and 1 is a figure-of-eight, which is as loud behind the source as in front of it.
          * @param[in] sharpness The directivity sharpness of the sound source, in the range [1, +INF].
          * Increasing this value increases the directivity towards the front of the source.
          */

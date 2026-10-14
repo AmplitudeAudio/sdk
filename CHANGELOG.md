@@ -73,6 +73,10 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 
 ### Fixed
 
+- Source and listener directivity pointed to the right (+X) instead of forward (+Y): a directional source was
+  loudest towards its right and silent towards its left, and a directional listener favoured sounds on its right. The
+  lobe now follows the forward axis of the orientation. Only entities and listeners with a directivity above 0 sound
+  different.
 - The mixer ramped the playback ratio across each block instead of stepping it once per block. A moving pitch
   — a glide, Doppler, a playback-rate change — no longer leaves a staircase in the resampler's read position,
   which was audible as a click at every block boundary.

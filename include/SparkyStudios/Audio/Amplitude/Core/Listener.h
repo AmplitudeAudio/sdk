@@ -137,9 +137,12 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Sets the directivity and sharpness of this listener.
          *
-         * This affects how sounds are perceived by the listener.
+         * This affects how sounds are perceived by the listener: the lobe points along the forward axis of the
+         * listener's orientation, so sounds coming from the front are heard louder than those behind or beside it.
+         * It is applied by the occlusion filter.
          *
-         * @param[in] directivity The directivity of the listener, in the range [0, 1].
+         * @param[in] directivity The directivity of the listener, in the range [0, 1]. 0 is omnidirectional, 0.5 is
+         * a cardioid, and 1 is a figure-of-eight, which hears the back as loud as the front.
          * @param[in] sharpness The directivity sharpness of the listener, in the range [1, +INF]. Increasing this
          * value increases the directivity towards the front of the listener.
          */
