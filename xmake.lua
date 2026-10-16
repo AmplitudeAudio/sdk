@@ -204,6 +204,12 @@ else
   add_defines("AM_PLUGINS_UNSUPPORTED")
 end
 
+-- Use the release CRT, even in Debug builds; This allows compatibility with engine integrations.
+if is_plat("windows") then
+    set_runtimes("MD")
+    add_requireconfs("*", { configs = { runtimes = "MD" } })
+end
+
 -- Unit test flags
 if has_config("unit_tests") then
   add_defines("AM_TESTING")
