@@ -70,6 +70,8 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 - `AmbisonicSpeakerDecoder` decodes the ambisonic branch to the output speakers; `sample_project/pipelines/surround.json`
   uses it. `AmbisonicBinauralDecoder` on a non-stereo output feeds L and R only, and warns once.
 - `ChannelLayout` (public): named layouts, speaker azimuths and the ITU-R BS.775 fold-down matrices.
+- `ChannelInstance::ResetRoom()`: an instance whose room was set with `SetRoom` follows the Engine again (the room of its
+  entity when the game tracks rooms, the room it is in otherwise).
 
 ### Fixed
 
@@ -96,6 +98,15 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 - Instance snapshots are handed to the audio thread through a lock-free triple buffer, and carry the channel's
   instancing state: publishing several snapshots within one mix block can no longer free the one being read, and the
   audio thread no longer reads game-owned channel fields.
+- Instance ids are no longer reused when a channel's instancing is disabled, enabled again or recycled, so a new
+  instance cannot inherit the playback position of a dead one with the same id.
+- The `ChannelInstance` setters serialize with the frame thread, which reads and publishes the same fields.
+- A new entity, listener, environment or room no longer starts with what the one that used its pooled state before left
+  behind (location, room, zone, reflections...). An entity's room also stops following a removed room whose state was
+  reused by another one.
+- Attenuation gains of the instances of a blended channel are evaluated once per block, instead of once more for each
+  of the obstruction and the occlusion blends.
+- `MonoPoleFilter` bounds its coefficient on a first call that carries no sample rate too.
 
 ### Known issues
 
