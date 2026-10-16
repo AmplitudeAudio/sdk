@@ -62,6 +62,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(channel.Valid());
             AM_EXPECT(channel.GetState()->GetEntity().Valid());
 
+            // Paused: a slow runner must not let the sound end, and take its instances with it, before the test is done.
+            channel.Pause();
+
             channel.EnableInstancing(eChannelInstanceMode_Blended);
 
             ChannelInstance instance = channel.AddInstance({ 1.0f, 0.0f, 0.0f });

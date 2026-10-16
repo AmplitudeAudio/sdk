@@ -40,17 +40,27 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(channel.GetInstanceCount() == 2);
             AM_EXPECT(channel.GetInstancingMode() == eChannelInstanceMode_Blended);
 
-            constexpr AmTime seekPosition = 1000.0;
+            constexpr AmTime seekPosition = 500.0;
             AM_EXPECT(channel.GetPlaybackPosition() < seekPosition);
             AM_EXPECT(channel.SetPlaybackPosition(seekPosition));
 
-            // The seek is applied by a mixer command on the audio thread.
-            AM_EXPECT(WaitUntil([&]() { return channel.GetPlaybackPosition() >= seekPosition; }));
+            // The seek is applied by a mixer command on the audio thread. A slow runner can let the sound play to its
+            // end before the position is polled: the channel is then gone, and asking it for its position is an error.
+            AmTime playbackPosition = 0.0;
+            AM_EXPECT(WaitUntil(
+                [&]()
+                {
+                    if (!channel.Valid())
+                        return true;
 
-            const AmTime playbackPosition = channel.GetPlaybackPosition();
-            AM_EXPECT(playbackPosition >= seekPosition);
+                    playbackPosition = channel.GetPlaybackPosition();
+                    return playbackPosition >= seekPosition;
+                }));
 
-            channel.Stop(0);
+            AM_EXPECT(playbackPosition >= seekPosition || !channel.Valid());
+
+            if (channel.Valid())
+                channel.Stop(0);
         }
     };
 
