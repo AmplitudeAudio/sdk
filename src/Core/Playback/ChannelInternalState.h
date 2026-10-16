@@ -861,6 +861,7 @@ namespace SparkyStudios::Audio::Amplitude
         // Multi-position instancing
         bool _instancingEnabled;
         eChannelInstanceMode _instancingMode;
+        // Never rewound: the audio thread matches cursors by instance id, so an id must not name two instances.
         AmChannelInstanceID _nextInstanceId;
         ChannelInstanceList _instances;
         std::unordered_map<AmChannelInstanceID, ChannelInstanceInternalState*> _instancesMap;

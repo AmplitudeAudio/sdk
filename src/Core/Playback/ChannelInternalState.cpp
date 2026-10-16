@@ -81,7 +81,6 @@ namespace SparkyStudios::Audio::Amplitude
 
         // A recycled channel must publish that it is no longer instanced, not only drop its instances.
         DisableInstancing();
-        _nextInstanceId = 1;
 
         _room = Room();
         _activeListener = Listener();
@@ -1179,8 +1178,6 @@ namespace SparkyStudios::Audio::Amplitude
         if (_instancingEnabled)
             return; // Already enabled
 
-        _nextInstanceId = 1;
-
         SetInstancingState(true, mode);
     }
 
@@ -1192,7 +1189,6 @@ namespace SparkyStudios::Audio::Amplitude
             return;
 
         DestroyInstances();
-        _nextInstanceId = 1;
 
         // One snapshot says both: no instances, and no instancing.
         SetInstancingState(false, eChannelInstanceMode_Blended);
