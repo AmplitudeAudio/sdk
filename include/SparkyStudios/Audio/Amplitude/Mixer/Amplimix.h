@@ -403,6 +403,18 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] virtual AmReal32 GetInstanceGain(AmSize index) const = 0;
 
         /**
+         * @brief Gets the attenuation gain of a specific instance, from its position relative to the listener.
+         *
+         * Computed once per block for the layer, so the nodes weighting or mixing the instances agree on it without
+         * evaluating the attenuation again. Is 1 when the layer has no attenuation or no listener.
+         *
+         * @param[in] index The instance index.
+         *
+         * @return The attenuation gain of the instance.
+         */
+        [[nodiscard]] virtual AmReal32 GetInstanceAttenuationGain(AmSize index) const = 0;
+
+        /**
          * @brief Tells whether the layer is currently rendering one of several separate-mode instances
          * through a pipeline shared by those instances.
          *

@@ -233,8 +233,7 @@ namespace SparkyStudios::Audio::Amplitude
                         const AmVector3 location = layer->GetInstanceLocation(i);
                         const AmReal32 weight = layer->GetInstanceWeight(i);
 
-                        const AmReal32 instanceGain = ComputeInstanceGain(
-                            *attenuation, listener, location, layer->HasInstanceOrientation(i) ? &layer->GetInstanceOrientation(i) : nullptr);
+                        const AmReal32 instanceGain = layer->GetInstanceAttenuationGain(i);
 
                         blendedGain += instanceGain * weight;
                         weightedLocation = Add(weightedLocation, Scale(location, weight));

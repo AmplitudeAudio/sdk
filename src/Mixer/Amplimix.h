@@ -167,6 +167,7 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] Room GetInstanceRoom(AmSize index) const override;
         [[nodiscard]] AmReal32 GetInstanceWeight(AmSize index) const override;
         [[nodiscard]] AmReal32 GetInstanceGain(AmSize index) const override;
+        [[nodiscard]] AmReal32 GetInstanceAttenuationGain(AmSize index) const override;
         [[nodiscard]] bool IsSharingPipelineAcrossInstances() const override;
 
         /**

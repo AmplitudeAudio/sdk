@@ -1564,6 +1564,14 @@ namespace SparkyStudios::Audio::Amplitude
         return instanceData[index].computedGain;
     }
 
+    AmReal32 AmplimixLayerImpl::GetInstanceAttenuationGain(AmSize index) const
+    {
+        if (index >= instanceData.size())
+            return 1.0f;
+
+        return instanceData[index].attenuationGain;
+    }
+
     bool AmplimixLayerImpl::IsSharingPipelineAcrossInstances() const
     {
         return processingInstance && sharedInstancePipeline;
@@ -1581,14 +1589,21 @@ namespace SparkyStudios::Audio::Amplitude
         const Listener listener = GetListener();
         const Attenuation* attenuation = GetAttenuation();
 
-        // The audible gain of an instance, as the blended attenuation computes it. Without attenuation, or without a
-        // listener, every instance counts with its weight alone.
-        const auto gain = [&](const InstanceData& instance) -> AmReal32
+        // The audible gain of an instance, as the blended attenuation computes it, evaluated once for the obstruction
+        // and occlusion blends and for the attenuation node. Without attenuation, or without a listener, every
+        // instance counts with its weight alone.
+        const bool attenuated = attenuation != nullptr && listener.Valid();
+        for (auto& instance : instanceData)
         {
-            if (attenuation == nullptr || !listener.Valid())
-                return 1.0f;
+            instance.attenuationGain = attenuated ? ComputeInstanceGain(
+                                                        *attenuation, listener, instance.location,
+                                                        instance.hasOrientation ? &instance.orientation : nullptr)
+                                                  : 1.0f;
+        }
 
-            return ComputeInstanceGain(*attenuation, listener, instance.location, instance.hasOrientation ? &instance.orientation : nullptr);
+        const auto gain = [](const InstanceData& instance) -> AmReal32
+        {
+            return instance.attenuationGain;
         };
 
         hasBlendedObstruction = BlendInstanceValues(

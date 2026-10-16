@@ -45,6 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         Room room;
         AmReal32 weight;
         AmReal32 computedGain;
+        AmReal32 attenuationGain = 1.0f; ///< Set by the mixer on its own copy of the snapshot, once per block (blended mode).
         AmUInt64 cursor; ///< Initial cursor, used when a layer (re)discovers the instance (separate mode).
         Orientation orientation = Orientation::Zero(); ///< Explicit orientation, meaningful only when @c hasOrientation.
         bool hasOrientation = false; ///< Whether the instance has an explicit orientation, else it follows the entity's.

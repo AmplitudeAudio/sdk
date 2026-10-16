@@ -69,6 +69,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         Room GetInstanceRoom(AmSize) const override { return {}; }
         AmReal32 GetInstanceWeight(AmSize) const override { return 0.0f; }
         AmReal32 GetInstanceGain(AmSize) const override { return 0.0f; }
+        AmReal32 GetInstanceAttenuationGain(AmSize) const override { return 1.0f; }
 
     protected:
         const Orientation _zeroOrientation = Orientation::Zero();
@@ -140,6 +141,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         const Orientation& GetInstanceOrientation(AmSize i) const override { return Followed(_instanceOrientations[i]); }
         AmReal32 GetInstanceWeight(AmSize i) const override { return _instanceWeights[i]; }
         AmReal32 GetInstanceGain(AmSize i) const override { return _instanceGains[i]; }
+        AmReal32 GetInstanceAttenuationGain(AmSize i) const override
+        {
+            if (_attenuation == nullptr || !_listener.Valid())
+                return 1.0f;
+
+            return _instanceOrientations[i].has_value() ? _attenuation->GetGain(_instanceLocations[i], *_instanceOrientations[i], _listener)
+                                                        : _attenuation->GetGain(_instanceLocations[i], _listener);
+        }
         bool IsSharingPipelineAcrossInstances() const override { return _sharingPipelineAcrossInstances; }
 
     private:
