@@ -14,6 +14,7 @@
 
 #include <Mixer/Nodes/AmbisonicBinauralDecoderNode.h>
 
+#include <algorithm>
 #include <atomic>
 
 #include <Ambisonics/AmbisonicDecoder.h>
@@ -52,7 +53,12 @@ namespace SparkyStudios::Audio::Amplitude
         const ePanningMode mode = Engine::GetInstance()->GetPanningMode();
 
         if (mode == ePanningMode_Stereo)
+        {
             _decoder.Process(&_soundField, input->GetFrameCount(), _stereo);
+
+            // The stereo preset decodes AmbiX (+Y left), but the panner encodes ears-centered (+Y right): mirror the pair.
+            std::swap_ranges(_stereo[0].begin(), _stereo[0].begin() + input->GetFrameCount(), _stereo[1].begin());
+        }
         else
             _binauralizer.Process(&_soundField, input->GetFrameCount(), _stereo);
 
