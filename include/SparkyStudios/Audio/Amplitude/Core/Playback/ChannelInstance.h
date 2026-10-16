@@ -256,6 +256,14 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRoom(const Room& room) const;
 
         /**
+         * @brief Makes this instance get its room from the Engine again.
+         *
+         * An instance whose room was set with @c SetRoom keeps it. After this call, the instance is given the
+         * room of its entity when the game tracks rooms, or the room it is in otherwise, from the next frame.
+         */
+        void ResetRoom() const;
+
+        /**
          * @brief Gets the attenuation weight for blended mode.
          *
          * The weight determines how much this instance contributes to the final

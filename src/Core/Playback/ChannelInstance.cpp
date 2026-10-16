@@ -137,6 +137,12 @@ namespace SparkyStudios::Audio::Amplitude
         _state->SetRoom(room);
     }
 
+    void ChannelInstance::ResetRoom() const
+    {
+        AMPLITUDE_ASSERT(Valid());
+        _state->ResetRoom();
+    }
+
     AmReal32 ChannelInstance::GetWeight() const
     {
         AMPLITUDE_ASSERT(Valid());

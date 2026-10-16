@@ -93,6 +93,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::SetLocation(const AmVector3& location)
     {
+        const auto lock = LockParent();
+
         _previousLocation = _location;
         _location = location;
 
@@ -111,6 +113,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::SetOrientation(const Orientation& orientation)
     {
+        const auto lock = LockParent();
+
         _orientation = orientation;
         _hasOrientation = true;
 
@@ -120,6 +124,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::ResetOrientation()
     {
+        const auto lock = LockParent();
+
         _orientation = Orientation::Zero();
         _hasOrientation = false;
 
@@ -138,6 +144,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::SetObstruction(AmReal32 obstruction)
     {
+        const auto lock = LockParent();
+
         _obstruction = obstruction;
         _hasObstruction = true;
 
@@ -147,6 +155,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::ResetObstruction()
     {
+        const auto lock = LockParent();
+
         _obstruction = 0.0f;
         _hasObstruction = false;
 
@@ -165,6 +175,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::SetOcclusion(AmReal32 occlusion)
     {
+        const auto lock = LockParent();
+
         _occlusion = occlusion;
         _hasOcclusion = true;
 
@@ -174,6 +186,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::ResetOcclusion()
     {
+        const auto lock = LockParent();
+
         _occlusion = 0.0f;
         _hasOcclusion = false;
 
@@ -183,13 +197,29 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::SetRoom(const Room& room)
     {
+        const auto lock = LockParent();
+
         _hasRoom = true;
 
         AssignRoom(room);
     }
 
+    void ChannelInstanceInternalState::ResetRoom()
+    {
+        const auto lock = LockParent();
+
+        _hasRoom = false;
+    }
+
+    std::unique_lock<std::recursive_mutex> ChannelInstanceInternalState::LockParent() const
+    {
+        return _parentChannel != nullptr ? _parentChannel->LockInstances() : std::unique_lock<std::recursive_mutex>();
+    }
+
     void ChannelInstanceInternalState::AssignRoom(const Room& room)
     {
+        const auto lock = LockParent();
+
         if (room.GetState() == _room.GetState())
             return;
 
@@ -201,6 +231,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInstanceInternalState::SetWeight(AmReal32 weight)
     {
+        const auto lock = LockParent();
+
         _weight = AM_MAX(weight, 0.0f);
 
         if (_parentChannel != nullptr)

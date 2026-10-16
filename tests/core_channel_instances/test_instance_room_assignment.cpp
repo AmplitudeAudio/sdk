@@ -202,7 +202,50 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
+    AM_TEST_CASE(TrackRoomsInstanceTestCase, core_channel_instances, instance_goes_back_to_the_entity_room_after_reset_room)
+    {
+    public:
+        void Run() override
+        {
+            Room entityRoom = amEngine->AddRoom(700);
+            AM_EXPECT(entityRoom.Valid());
+            entityRoom.SetDimensions({ 10.0f, 10.0f, 10.0f });
+
+            Room ownRoom = amEngine->AddRoom(701);
+            AM_EXPECT(ownRoom.Valid());
+            ownRoom.SetDimensions({ 10.0f, 10.0f, 10.0f });
+
+            Entity entity = amEngine->AddEntity(800);
+            AM_EXPECT(entity.Valid());
+            entity.SetRoom(entityRoom);
+
+            Channel channel = amEngine->Play(amEngine->GetCollectionHandle("grass_footsteps"), entity);
+            amEngine->WaitUntilFrames(2);
+            AM_EXPECT(channel.Valid());
+
+            channel.EnableInstancing(eChannelInstanceMode_Separate);
+
+            ChannelInstance instance = channel.AddInstance({ 0.0f, 0.0f, 0.0f });
+            AM_EXPECT(instance.Valid());
+
+            instance.SetRoom(ownRoom);
+            amEngine->WaitUntilFrames(2);
+            AM_EXPECT(instance.GetRoom().GetId() == ownRoom.GetId());
+
+            // The instance follows the entity again: the room of the entity replaces its own.
+            instance.ResetRoom();
+            amEngine->WaitUntilFrames(2);
+            AM_EXPECT(instance.GetRoom().GetId() == entityRoom.GetId());
+
+            channel.Stop();
+            amEngine->RemoveEntity(800);
+            amEngine->RemoveRoom(700);
+            amEngine->RemoveRoom(701);
+        }
+    };
+
     AM_REGISTER_TEST(core_channel_instances, instance_gets_the_room_it_is_in);
     AM_REGISTER_TEST(core_channel_instances, instance_room_set_by_the_game_is_replaced_when_game_does_not_track_rooms);
     AM_REGISTER_TEST(core_channel_instances, instance_follows_the_entity_room_when_game_tracks_rooms);
+    AM_REGISTER_TEST(core_channel_instances, instance_goes_back_to_the_entity_room_after_reset_room);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -18,6 +18,7 @@
 #define _AM_IMPLEMENTATION_CORE_PLAYBACK_CHANNEL_INSTANCE_INTERNAL_STATE_H
 
 #include <atomic>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -322,6 +323,13 @@ namespace SparkyStudios::Audio::Amplitude
         void AssignRoom(const Room& room);
 
         /**
+         * @brief Makes this instance get its room from the Engine again.
+         *
+         * The room previously set stays until the next frame replaces it.
+         */
+        void ResetRoom();
+
+        /**
          * @brief Checks whether this instance has a room of its own.
          *
          * @return @c true if a room was set on this instance through @c SetRoom, @c false otherwise.
@@ -473,6 +481,10 @@ namespace SparkyStudios::Audio::Amplitude
         fplutil::intrusive_list_node instance_node;
 
     private:
+        // Writes race with the thread driving AdvanceFrame, which reads and publishes these fields under the same lock.
+        // Empty when the instance has no parent channel.
+        [[nodiscard]] std::unique_lock<std::recursive_mutex> LockParent() const;
+
         AmChannelInstanceID _instanceId;
         AmUInt64 _generation = 0;
         ChannelInternalState* _parentChannel;
