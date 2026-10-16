@@ -18,6 +18,7 @@
 #define _AM_IMPLEMENTATION_DSP_FILTERS_MONOPOLE_FILTER_H
 
 #include <array>
+#include <limits>
 
 #include <SparkyStudios/Audio/Amplitude/DSP/Filter.h>
 
@@ -37,8 +38,9 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         std::array<AmAudioSample, kAmMaxSupportedChannelCount> _previousSample{};
 
-        // The highest coefficient honoured at _sampleRate, see ProcessSample().
-        AmUInt32 _sampleRate = 0;
+        // The highest coefficient honoured at _sampleRate, see ProcessSample(). The rate starts as one no caller
+        // passes, so the first call computes it even when that call has no rate (0).
+        AmUInt32 _sampleRate = std::numeric_limits<AmUInt32>::max();
         AmReal32 _maxCoefficient = 1.0f;
     };
 
