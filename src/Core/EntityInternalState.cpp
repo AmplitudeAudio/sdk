@@ -29,10 +29,30 @@ namespace SparkyStudios::Audio::Amplitude
         , _directivitySharpness(1.0f)
         , _environmentFactors()
         , _room()
+        , _roomId(kAmInvalidObjectId)
         , _environmentFactorsDirty(true)
         , _environmentVersions()
         , _playingSoundList(&ChannelInternalState::entity_node)
     {}
+
+    void EntityInternalState::Reset()
+    {
+        _id = kAmInvalidObjectId;
+        _lastLocation = kVector3Zero;
+        _velocity = kVector3Zero;
+        _location = kVector3Zero;
+        _orientation = Orientation::Zero();
+        _inverseMatrix = kMatrix4Identity;
+        _obstruction = 0.0f;
+        _occlusion = 0.0f;
+        _directivity = 0.0f;
+        _directivitySharpness = 1.0f;
+        _environmentFactors.clear();
+        _room.Clear();
+        _roomId = kAmInvalidObjectId;
+        _environmentFactorsDirty = true;
+        _environmentVersions.clear();
+    }
 
     void EntityInternalState::SetLocation(const AmVector3& location)
     {

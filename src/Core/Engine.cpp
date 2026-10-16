@@ -2376,6 +2376,7 @@ namespace SparkyStudios::Audio::Amplitude
             return item;
 
         ListenerInternalState* listener = _state->listener_state_free_list.back();
+        listener->Reset();
         listener->SetId(id);
         _state->listener_state_free_list.pop_back();
         _state->listener_list.push_back(*listener);
@@ -2436,6 +2437,7 @@ namespace SparkyStudios::Audio::Amplitude
             return item;
 
         EntityInternalState* entity = _state->entity_state_free_list.back();
+        entity->Reset();
         entity->SetId(id);
         _state->entity_state_free_list.pop_back();
         _state->entity_list.push_back(*entity);
@@ -2496,6 +2498,7 @@ namespace SparkyStudios::Audio::Amplitude
             return item;
 
         EnvironmentInternalState* environment = _state->environment_state_free_list.back();
+        environment->Reset();
         environment->SetId(id);
         _state->environment_state_free_list.pop_back();
         _state->environment_list.push_back(*environment);
@@ -2556,6 +2559,7 @@ namespace SparkyStudios::Audio::Amplitude
             return item;
 
         RoomInternalState* room = _state->room_state_free_list.back();
+        room->Reset();
         room->SetId(id);
         _state->room_state_free_list.pop_back();
         _state->room_list.push_back(*room);

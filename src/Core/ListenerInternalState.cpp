@@ -28,6 +28,18 @@ namespace SparkyStudios::Audio::Amplitude
         , _playingSoundList(&ChannelInternalState::listener_node)
     {}
 
+    void ListenerInternalState::Reset()
+    {
+        _id = kAmInvalidObjectId;
+        _location = kVector3Zero;
+        _orientation = Orientation::Zero();
+        _lastLocation = kVector3Zero;
+        _velocity = kVector3Zero;
+        _directivity = 0.0f;
+        _directivitySharpness = 1.0f;
+        _inverseMatrix = kMatrix4Identity;
+    }
+
     void ListenerInternalState::SetLocation(const AmVector3& location)
     {
         _lastLocation = _location;

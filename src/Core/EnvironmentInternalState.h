@@ -40,6 +40,13 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmEnvironmentID GetId() const;
 
         /**
+         * @brief Brings this state back to what a new Environment has, so a pooled state can be reused.
+         *
+         * Keeps the position in the Engine lists.
+         */
+        void Reset();
+
+        /**
          * @brief Sets the ID of this Environment in game.
          *
          * @param id The game Environment ID.

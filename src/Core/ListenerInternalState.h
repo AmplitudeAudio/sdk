@@ -31,6 +31,13 @@ namespace SparkyStudios::Audio::Amplitude
         ListenerInternalState();
 
         /**
+         * @brief Brings this state back to what a new Listener has, so a pooled state can be reused.
+         *
+         * Keeps the sounds being played by this Listener and the position in the Engine lists.
+         */
+        void Reset();
+
+        /**
          * @brief Gets the ID of this Listener in the game.
          *
          * @return The game Listener ID.

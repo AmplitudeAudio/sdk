@@ -26,6 +26,16 @@ namespace SparkyStudios::Audio::Amplitude
         , _version(0)
     {}
 
+    void EnvironmentInternalState::Reset()
+    {
+        _id = kAmInvalidObjectId;
+        _zone.reset();
+        _effect = nullptr;
+
+        // Not rewound: entities cache the factors they computed against a version.
+        IncrementVersion();
+    }
+
     AmEnvironmentID EnvironmentInternalState::GetId() const
     {
         return _id;

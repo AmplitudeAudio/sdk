@@ -229,17 +229,26 @@ namespace SparkyStudios::Audio::Amplitude
         AM_INLINE void SetRoom(const Room& room)
         {
             _room = room;
+            _roomId = room.GetId();
         }
 
         /**
          * @brief Gets the room this Entity belongs to.
          *
-         * @return The room of this Entity. May be invalid if the game is not tracking rooms.
+         * @return The room of this Entity. May be invalid if the game is not tracking rooms, or if the room was
+         * removed since it was set: rooms are pooled, so the handle alone could now name another room.
          */
-        [[nodiscard]] AM_INLINE const Room& GetRoom() const
+        [[nodiscard]] AM_INLINE Room GetRoom() const
         {
-            return _room;
+            return _room.Valid() && _room.GetId() == _roomId ? _room : Room();
         }
+
+        /**
+         * @brief Brings this state back to what a new Entity has, so a pooled state can be reused.
+         *
+         * Keeps the sounds being played on this Entity and the position in the Engine lists.
+         */
+        void Reset();
 
         /**
          * @brief Updates the inverse matrix of this Entity.
@@ -332,6 +341,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::unordered_map<AmEnvironmentID, AmReal32> _environmentFactors;
 
         Room _room;
+        AmRoomID _roomId;
 
         // Cache invalidation for environment factors
         bool _environmentFactorsDirty;

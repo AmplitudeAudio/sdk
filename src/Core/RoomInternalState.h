@@ -150,6 +150,22 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @brief Brings this room back to what a new one has, so a pooled state can be reused.
+         *
+         * Keeps the sounds being played in this room and the position in the Engine lists.
+         */
+        void Reset()
+        {
+            _id = kAmInvalidObjectId;
+            _reflectionsProperties = RoomReflectionsProperties();
+            _needUpdate = false;
+            _wasUpdated = false;
+
+            for (AmSize i = 0; i < kAmRoomSurfaceCount; i++)
+                _materials[i] = RoomWallMaterial(eRoomWallMaterialType_Transparent);
+        }
+
+        /**
          * @brief Gets the ID of this room.
          *
          * @return The room ID.
