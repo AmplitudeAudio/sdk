@@ -1,0 +1,43 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include "EngineTestCase.h"
+#include "TestRegistry.h"
+
+using namespace SparkyStudios::Audio::Amplitude;
+
+namespace SparkyStudios::Audio::Amplitude::Tests
+{
+    AM_TEST_CASE(EngineTestCase, core_engine, queued_play_does_not_run_after_deinitialize_unloads_banks)
+    {
+    public:
+        void Run() override
+        {
+            Entity entity = amEngine->AddEntity(100);
+            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+
+            // Queue the voice start for the next frame update, then tear down immediately: nothing
+            // must drain that queue (and start a voice) before this call returns.
+            Channel channel = amEngine->Play(test_sound_01, entity);
+            AM_EXPECT(channel.Valid());
+
+            // Deinitialize in the same "frame": this must not crash with a use-after-free.
+            AM_EXPECT(Deinitialize());
+        }
+    };
+
+    AM_REGISTER_TEST(core_engine, queued_play_does_not_run_after_deinitialize_unloads_banks);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -177,6 +177,9 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _stopFired = false;
 
+        if (_engine->IsStopping())
+            return false;
+
         if (_switchContainer != nullptr)
             return PlaySwitchContainer();
 
