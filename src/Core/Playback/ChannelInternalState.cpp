@@ -790,7 +790,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::On(const eChannelEvent event, ChannelEventCallback callback, void* userData)
     {
-        if (!Valid())
+        if (!IsAlive())
             return;
 
         if (_eventsMap[event] == nullptr)
@@ -801,7 +801,6 @@ namespace SparkyStudios::Audio::Amplitude
 
     void ChannelInternalState::Trigger(eChannelEvent event)
     {
-        // A virtual channel is alive but not real: its End and Stop events must still fire.
         if (!IsAlive())
             return;
 
