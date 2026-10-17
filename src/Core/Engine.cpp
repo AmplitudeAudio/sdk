@@ -226,6 +226,31 @@ namespace SparkyStudios::Audio::Amplitude
         list->push_front(*channel);
     }
 
+    // Detaches every channel still playing on this entity/listener/room. These states are pooled: without this, a
+    // channel that outlives the object it was attached to stays linked in its playing sound list, and once the
+    // state is recycled for another object, that unrelated voice (and the updates it follows) is reported as the
+    // new object's own.
+    void DetachPlayingSounds(EntityInternalState* entity)
+    {
+        ChannelList& channels = entity->GetPlayingSoundList();
+        for (auto it = channels.begin(); it != channels.end();)
+            (it++)->SetEntity(Entity());
+    }
+
+    void DetachPlayingSounds(ListenerInternalState* listener)
+    {
+        ChannelList& channels = listener->GetPlayingSoundList();
+        for (auto it = channels.begin(); it != channels.end();)
+            (it++)->SetListener(Listener());
+    }
+
+    void DetachPlayingSounds(RoomInternalState* room)
+    {
+        ChannelList& channels = room->GetPlayingSoundList();
+        for (auto it = channels.begin(); it != channels.end();)
+            (it++)->SetRoom(Room());
+    }
+
     /**
      * @brief Waits until the voices of halted channels finished rendering.
      *
@@ -2412,6 +2437,7 @@ namespace SparkyStudios::Audio::Amplitude
                 });
             findIt != _state->listener_state_memory.end())
         {
+            DetachPlayingSounds(&*findIt);
             findIt->SetId(kAmInvalidObjectId);
             findIt->node.remove();
             _state->listener_state_free_list.push_back(&*findIt);
@@ -2423,6 +2449,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!listener->Valid())
             return;
 
+        DetachPlayingSounds(listener->GetState());
         listener->GetState()->SetId(kAmInvalidObjectId);
         listener->GetState()->node.remove();
         _state->listener_state_free_list.push_back(listener->GetState());
@@ -2465,6 +2492,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!entity->Valid())
             return;
 
+        DetachPlayingSounds(entity->GetState());
         entity->GetState()->SetId(kAmInvalidObjectId);
         entity->GetState()->node.remove();
         _state->entity_state_free_list.push_back(entity->GetState());
@@ -2483,6 +2511,7 @@ namespace SparkyStudios::Audio::Amplitude
                 });
             findIt != _state->entity_state_memory.end())
         {
+            DetachPlayingSounds(&*findIt);
             findIt->SetId(kAmInvalidObjectId);
             findIt->node.remove();
             _state->entity_state_free_list.push_back(&*findIt);
@@ -2587,6 +2616,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!room->Valid())
             return;
 
+        DetachPlayingSounds(room->GetState());
         room->GetState()->SetId(kAmInvalidObjectId);
         room->GetState()->node.remove();
         _state->room_state_free_list.push_back(room->GetState());
@@ -2605,6 +2635,7 @@ namespace SparkyStudios::Audio::Amplitude
                 });
             findIt != _state->room_state_memory.end())
         {
+            DetachPlayingSounds(&*findIt);
             findIt->SetId(kAmInvalidObjectId);
             findIt->node.remove();
             _state->room_state_free_list.push_back(&*findIt);
