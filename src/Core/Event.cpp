@@ -576,7 +576,11 @@ namespace SparkyStudios::Audio::Amplitude
                 if (!_actions[_runningActionIndex].IsExecuting(_entity))
                 {
                     ++_runningActionIndex;
-                    _actions[_runningActionIndex].Run(_entity);
+
+                    if (_runningActionIndex < _actions.size())
+                        _actions[_runningActionIndex].Run(_entity);
+                    else
+                        _running = false;
                 }
                 else
                 {
