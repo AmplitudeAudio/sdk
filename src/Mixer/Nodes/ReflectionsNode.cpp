@@ -14,7 +14,6 @@
 
 #include <Core/Engine.h>
 #include <Core/RoomInternalState.h>
-#include <Mixer/LayerAttenuation.h>
 #include <Mixer/Nodes/ReflectionsNode.h>
 
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
@@ -113,7 +112,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (!channel.Valid() || channel.GetState() == nullptr)
             return nullptr;
 
-        const AmReal32 roomGain = channel.GetState()->GetRoomGain(room.GetId()) * ComputeLayerAttenuationGain(*layer);
+        const AmReal32 roomGain = channel.GetState()->GetRoomGain(room.GetId());
 
         if (roomGain < kEpsilon)
             return nullptr;

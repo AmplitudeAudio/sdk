@@ -15,7 +15,6 @@
 #include <Core/Engine.h>
 #include <DSP/ChannelMap.h>
 #include <DSP/Gain.h>
-#include <Mixer/LayerAttenuation.h>
 #include <Mixer/Nodes/ReverbNode.h>
 
 #include <algorithm>
@@ -125,8 +124,7 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        // The room send is heard no further than the dry sound: the room gain only knows the room, not the listener.
-        const AmReal32 roomGain = channel.GetState()->GetRoomGain(room.GetId()) * ComputeLayerAttenuationGain(*layer);
+        const AmReal32 roomGain = channel.GetState()->GetRoomGain(room.GetId());
 
         if (roomGain < kEpsilon)
         {
