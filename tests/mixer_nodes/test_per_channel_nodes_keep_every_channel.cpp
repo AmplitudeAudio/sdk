@@ -51,7 +51,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             constexpr AmUInt16 channels = 6;
 
             for (const char* name :
-                 { "Attenuation", "Occlusion", "Obstruction", "EnvironmentEffect", "HardClip", "RoundoffClip", "Clamp", "Limiter" })
+                 { "Attenuation", "AirAbsorption", "Occlusion", "Obstruction", "EnvironmentEffect", "HardClip", "RoundoffClip", "Clamp", "Limiter" })
             {
                 const auto node = Node::Find(name);
                 AM_EXPECT_NOT(node == nullptr);
