@@ -42,5 +42,16 @@ else
         add_files("test_plugin/*.cpp")
     target_end()
 
+    -- A plugin that exports none of the optional frame hooks.
+    target("test_plugin_no_hooks")
+        set_kind("shared")
+        set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
+        add_defines("AM_BUILDSYSTEM_BUILDING_PLUGIN")
+
+        add_deps("Amplitude::Shared")
+
+        add_files("test_plugin_no_hooks/*.cpp")
+    target_end()
+
     includes("runners/desktop/xmake.lua")
 end

@@ -66,6 +66,24 @@ namespace SparkyStudios::Audio::Amplitude
     // The list of loaded plugins.
     static std::unordered_map<std::filesystem::path, dylib::library*> gLoadedPlugins = {};
 
+    // The optional per-frame hooks exported by the loaded plugins (`PluginBeforeUpdate` and `PluginUpdate`).
+    struct PluginFrameHooks
+    {
+        void (*before)(AmTime) = nullptr;
+        void (*after)(AmTime) = nullptr;
+    };
+
+    static std::vector<PluginFrameHooks> gPluginFrameHooks = {};
+
+    static void CallPluginFrameHooks(AmTime delta, bool before)
+    {
+        for (const auto& hooks : gPluginFrameHooks)
+        {
+            if (const auto hook = before ? hooks.before : hooks.after; hook != nullptr)
+                hook(delta);
+        }
+    }
+
     std::filesystem::path GetExecutableRoot()
     {
         static std::filesystem::path rootPath;
@@ -501,6 +519,7 @@ namespace SparkyStudios::Audio::Amplitude
             ampooldelete(eMemoryPoolKind_Engine, library, plugin.second);
         }
 
+        gPluginFrameHooks.clear();
         gLoadedPlugins.clear();
 #endif
     }
@@ -511,6 +530,16 @@ namespace SparkyStudios::Audio::Amplitude
         if (pluginLibraryName.empty())
         {
             amLogError("The plugin library path is empty");
+            return nullptr;
+        }
+
+        // Plugins register nodes, hooks and other state the running engine reads without locking, so they can only be loaded
+        // while the engine is not initialized. They are unloaded when the engine instance is destroyed.
+        if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
+        {
+            amLogError(
+                "The plugin '" AM_OS_CHAR_FMT "' cannot be loaded while the engine is initialized. Load plugins before Engine::Initialize().",
+                pluginLibraryName.c_str());
             return nullptr;
         }
 
@@ -608,6 +637,23 @@ namespace SparkyStudios::Audio::Amplitude
             const auto GetPluginName = plugin->get_function<const char*()>("PluginName");
             const auto GetPluginVersion = plugin->get_function<const char*()>("PluginVersion");
             amLogInfo("Loaded Plugin '%s' Version: %s", GetPluginName(), GetPluginVersion());
+        }
+
+        {
+            // Both hooks are optional: get_symbol throws for a missing symbol.
+            const auto findHook = [plugin](const char* name) -> void (*)(AmTime)
+            {
+                try
+                {
+                    return reinterpret_cast<void (*)(AmTime)>(plugin->get_symbol(name));
+                }
+                catch (const std::exception&)
+                {
+                    return nullptr;
+                }
+            };
+
+            gPluginFrameHooks.push_back({ findHook("PluginBeforeUpdate"), findHook("PluginUpdate") });
         }
 
         gLoadedPlugins[pluginPath] = plugin;
@@ -2850,6 +2896,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         EraseFinishedSounds(_state);
 
+#ifndef AM_PLUGINS_UNSUPPORTED
+        // Plugins see the state the host left, before the listeners, rooms and entities update.
+        CallPluginFrameHooks(delta, true);
+#endif
+
         _state->room_list.sort(
             [](const RoomInternalState& a, const RoomInternalState& b) -> bool
             {
@@ -2894,6 +2945,11 @@ namespace SparkyStudios::Audio::Amplitude
                 state.MarkEnvironmentFactorsClean();
             }
         }
+
+#ifndef AM_PLUGINS_UNSUPPORTED
+        // Plugins see the final listener, room and entity state, and what they set applies to this frame's channel updates.
+        CallPluginFrameHooks(delta, false);
+#endif
 
         for (auto&& bus : _state->buses)
             bus->ResetDuckGain();

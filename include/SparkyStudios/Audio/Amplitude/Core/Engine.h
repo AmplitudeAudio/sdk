@@ -1847,7 +1847,10 @@ namespace SparkyStudios::Audio::Amplitude
          *
          * @param[in] pluginLibraryName The name of the plugin library to load.
          *
-         * @return A handle to the loaded plugin library.
+         * @note Plugins can only be loaded while the engine is not initialized. Loading one afterwards is refused. Loaded
+         * plugins are unloaded when the engine instance is destroyed.
+         *
+         * @return A handle to the loaded plugin library, or @c nullptr if it could not be loaded.
          */
         static AmVoidPtr LoadPlugin(const AmOsString& pluginLibraryName);
 

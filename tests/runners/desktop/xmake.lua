@@ -64,7 +64,7 @@ target("amplitude_tests")
     set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/static")
     set_rundir("$(builddir)")
 
-    add_deps("common_test_static", "amplitude_fidelity_lib", "build_fidelity_project")
+    add_deps("common_test_static", "amplitude_fidelity_lib", "build_fidelity_project", "test_plugin", "test_plugin_no_hooks")
 
     -- All test files (they self-register via static initialization)
     add_files("$(projectdir)/tests/ambisonics_*/test_*.cpp")
@@ -77,6 +77,9 @@ target("amplitude_tests")
     add_files("$(projectdir)/tests/mixer_*/test_*.cpp")
     add_files("$(projectdir)/tests/fidelity_*/test_*.cpp")
     add_files("$(projectdir)/tests/threading_*/test_*.cpp")
+
+    -- Where the test plugins are built, for tests that load them
+    add_defines("AM_TEST_PLUGIN_DIR=\"$(projectdir)/$(builddir)/$(plat)/$(arch)/$(mode)/shared\"")
 
     -- Runner main
     add_files("main.cpp")

@@ -16,7 +16,39 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
+#include <atomic>
+
+namespace
+{
+    // Records when each frame hook ran, so the tests can check the call order against the frame.
+    std::atomic<AmUInt64> gSequence{ 0 };
+    std::atomic<AmUInt64> gBeforeCalls{ 0 };
+    std::atomic<AmUInt64> gAfterCalls{ 0 };
+    std::atomic<AmUInt64> gLastBeforeSequence{ 0 };
+    std::atomic<AmUInt64> gLastAfterSequence{ 0 };
+} // namespace
+
 extern "C" {
+
+AM_API_PLUGIN void PluginBeforeUpdate(AmTime)
+{
+    gLastBeforeSequence = ++gSequence;
+    ++gBeforeCalls;
+}
+
+AM_API_PLUGIN void PluginUpdate(AmTime)
+{
+    gLastAfterSequence = ++gSequence;
+    ++gAfterCalls;
+}
+
+AM_API_PLUGIN void TestPluginHookState(AmUInt64* beforeCalls, AmUInt64* afterCalls, AmUInt64* lastBeforeSequence, AmUInt64* lastAfterSequence)
+{
+    *beforeCalls = gBeforeCalls;
+    *afterCalls = gAfterCalls;
+    *lastBeforeSequence = gLastBeforeSequence;
+    *lastAfterSequence = gLastAfterSequence;
+}
 
 AM_API_PLUGIN const char* PluginName()
 {
