@@ -17,7 +17,6 @@
 #include <Core/EngineInternalState.h>
 #include <DSP/Gain.h>
 #include <Mixer/InstanceBlending.h>
-#include <Mixer/LayerAttenuation.h>
 #include <Mixer/Nodes/AttenuationNode.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -213,8 +212,75 @@ namespace SparkyStudios::Audio::Amplitude
 
         const Listener& listener = layer->GetListener();
 
-        AmVector3 effectiveLocation;
-        AmReal32 targetGain = ComputeLayerAttenuationGain(*layer, &effectiveLocation);
+        AmReal32 targetGain = 1.0f;
+        AmVector3 effectiveLocation = layer->GetLocation();
+
+        // Compute attenuated gain based on spatialization
+        {
+            const eSpatialization spatialization = layer->GetSpatialization();
+
+            if (listener.Valid())
+            {
+                if (layer->IsMultiPosition())
+                {
+                    const AmSize instanceCount = layer->GetInstanceCount();
+                    AmReal32 totalWeight = 0.0f;
+                    AmReal32 blendedGain = 0.0f;
+                    AmVector3 weightedLocation = kVector3Zero;
+
+                    for (AmSize i = 0; i < instanceCount; ++i)
+                    {
+                        const AmVector3 location = layer->GetInstanceLocation(i);
+                        const AmReal32 weight = layer->GetInstanceWeight(i);
+
+                        const AmReal32 instanceGain = layer->GetInstanceAttenuationGain(i);
+
+                        blendedGain += instanceGain * weight;
+                        weightedLocation = Add(weightedLocation, Scale(location, weight));
+                        totalWeight += weight;
+                    }
+
+                    // Normalize by total weight
+                    constexpr AmReal32 kMinTotalWeight = 1e-3f;
+
+                    if (totalWeight > kMinTotalWeight)
+                    {
+                        const AmReal32 invTotalWeight = 1.0f / totalWeight;
+                        targetGain = blendedGain * invTotalWeight;
+                        effectiveLocation = Scale(weightedLocation, invTotalWeight);
+                    }
+                    else
+                    {
+                        targetGain = 0.0f;
+                        effectiveLocation = kVector3Zero;
+                    }
+                }
+                else
+                {
+                    const Entity& entity = layer->GetEntity();
+
+                    if (spatialization == eSpatialization_PositionOrientation)
+                    {
+                        AMPLITUDE_ASSERT(entity.Valid());
+                        targetGain *= attenuation->GetGain(effectiveLocation, layer->GetOrientation(), listener);
+                    }
+                    else if (spatialization == eSpatialization_HRTF && entity.Valid())
+                    {
+                        targetGain *= attenuation->GetGain(effectiveLocation, layer->GetOrientation(), listener);
+                    }
+                    else if (spatialization == eSpatialization_Position)
+                    {
+                        // Position-based spatialization, or HRTF-based spatialization without entity
+                        targetGain *= attenuation->GetGain(effectiveLocation, listener);
+                    }
+                }
+            }
+            else
+            {
+                // No sound without listener on an attenuated source
+                targetGain = 0.0f;
+            }
+        }
 
         const AmUInt64 frames = input->GetFrameCount();
         const AmUInt16 channels = _output.GetChannelCount();
