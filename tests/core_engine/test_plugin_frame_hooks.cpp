@@ -14,7 +14,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#if defined(AM_WINDOWS_VERSION)
+#ifndef AM_PLUGINS_UNSUPPORTED
+
+#if AM_PLATFORM_WIN
 #include <windows.h>
 #else
 #include <dlfcn.h>
@@ -25,7 +27,6 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-#ifndef AM_PLUGINS_UNSUPPORTED
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
     namespace
@@ -36,7 +37,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
         HookStateFn FindHookState(AmVoidPtr handle)
         {
-#if defined(AM_WINDOWS_VERSION)
+#if AM_PLATFORM_WIN
             return reinterpret_cast<HookStateFn>(GetProcAddress(static_cast<HMODULE>(handle), "TestPluginHookState"));
 #else
             return reinterpret_cast<HookStateFn>(dlsym(handle, "TestPluginHookState"));
@@ -120,4 +121,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     AM_REGISTER_TEST_REQUIRES_PLUGINS(core_engine, cannot_load_plugin_after_initialization);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
+
 #endif
