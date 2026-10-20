@@ -25,6 +25,7 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
+#ifndef AM_PLUGINS_UNSUPPORTED
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
     namespace
@@ -119,3 +120,4 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     AM_REGISTER_TEST_REQUIRES_PLUGINS(core_engine, cannot_load_plugin_after_initialization);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
+#endif
