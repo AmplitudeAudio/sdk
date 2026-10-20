@@ -159,6 +159,7 @@ namespace SparkyStudios::Audio::Amplitude
     static std::shared_ptr<AmbisonicPanningNode> sAmbisonicPanningNodePlugin = nullptr;
     static std::shared_ptr<AmbisonicRotatorNode> sAmbisonicRotatorNodePlugin = nullptr;
     static std::shared_ptr<AmbisonicSpeakerDecoderNode> sAmbisonicSpeakerDecoderNodePlugin = nullptr;
+    static std::shared_ptr<AirAbsorptionNode> sAirAbsorptionNodePlugin = nullptr;
     static std::shared_ptr<AttenuationNode> sAttenuationNodePlugin = nullptr;
     static std::shared_ptr<ClampNode> sClampNodePlugin = nullptr;
     static std::shared_ptr<HardClipNode> sHardClipNodePlugin = nullptr;
@@ -746,6 +747,7 @@ namespace SparkyStudios::Audio::Amplitude
         sAmbisonicPanningNodePlugin = RegisterExtension<AmbisonicPanningNode>();
         sAmbisonicRotatorNodePlugin = RegisterExtension<AmbisonicRotatorNode>();
         sAmbisonicSpeakerDecoderNodePlugin = RegisterExtension<AmbisonicSpeakerDecoderNode>();
+        sAirAbsorptionNodePlugin = RegisterExtension<AirAbsorptionNode>();
         sAttenuationNodePlugin = RegisterExtension<AttenuationNode>();
         sClampNodePlugin = RegisterExtension<ClampNode>();
         sHardClipNodePlugin = RegisterExtension<HardClipNode>();
@@ -822,6 +824,7 @@ namespace SparkyStudios::Audio::Amplitude
         UnregisterExtension(sAmbisonicPanningNodePlugin);
         UnregisterExtension(sAmbisonicRotatorNodePlugin);
         UnregisterExtension(sAmbisonicSpeakerDecoderNodePlugin);
+        UnregisterExtension(sAirAbsorptionNodePlugin);
         UnregisterExtension(sAttenuationNodePlugin);
         UnregisterExtension(sClampNodePlugin);
         UnregisterExtension(sHardClipNodePlugin);
