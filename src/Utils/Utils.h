@@ -178,6 +178,13 @@ namespace SparkyStudios::Audio::Amplitude
                 out[j * numSamples + i + outOffset] = in[(i + inOffset) * numChannels + j];
     }
 
+    /**
+     * @brief Deinterleaves frames into the channels of an audio buffer.
+     *
+     * Each channel is written through the buffer's own channel view, so the destination may hold more frames than requested.
+     */
+    void Deinterleave(const AmReal32* in, AudioBuffer* out, AmUInt64 outOffset, AmUInt64 numFrames, AmUInt32 numChannels);
+
     void Interleave(const AudioBuffer* in, AmUInt64 inOffset, AmReal32* out, AmUInt64 outOffset, AmInt32 numSamples, AmInt32 numChannels);
 
     AM_INLINE void ScalarAdd(const AmReal32* input, AmReal32* output, AmReal32 scalar, AmSize length)
