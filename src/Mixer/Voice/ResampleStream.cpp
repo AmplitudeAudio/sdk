@@ -111,6 +111,7 @@ namespace SparkyStudios::Audio::Amplitude
         // A copy reads the frames, each part exactly up to its end, so no seam, end or loop count is involved. The FIFO
         // is empty after Reset(): it holds the frames only until PrimeHistory() has taken them.
         SourceReader preroll = reader;
+        preroll.SetReleasesRing(false);
         SourceReadReport read;
         if (tail > 0)
         {
@@ -143,8 +144,9 @@ namespace SparkyStudios::Audio::Amplitude
             const AmUInt64 want = AM_MIN(frames - report.produced, static_cast<AmUInt64>(_scratch.GetFrameCount()));
             const AmUInt64 needed = _resampler->GetInputFramesNeeded(want);
 
+            bool underran = false;
             if (_fifoCount < needed && _fifoCount < capacity)
-                Refill(reader, AM_MIN(needed - _fifoCount, capacity - _fifoCount), report.produced, report);
+                underran = Refill(reader, AM_MIN(needed - _fifoCount, capacity - _fifoCount), report.produced, report);
 
             AmUInt64 inFrames = _fifoCount;
             AmUInt64 outFrames = want;
@@ -172,6 +174,16 @@ namespace SparkyStudios::Audio::Amplitude
                 report.finishedFrame = AM_MIN(producedBefore + offsetFrames, report.produced);
             }
 
+            if (underran && _fifoCount < needed && outFrames < want)
+            {
+                // The stream could not keep up: the rest of the block is silence. The resampler is not advanced for it,
+                // so the next pull continues from the held position and no source frame is skipped.
+                for (AmUInt16 c = 0; c < _sourceChannels; ++c)
+                    std::fill(out[c].begin() + offset + report.produced, out[c].begin() + offset + frames, 0.0f);
+                report.produced = frames;
+                break;
+            }
+
             if (outFrames > 0)
             {
                 stalls = 0;
@@ -196,13 +208,13 @@ namespace SparkyStudios::Audio::Amplitude
         return report;
     }
 
-    void ResampleStream::Refill(SourceReader& reader, AmUInt64 frames, AmUInt64 produced, PullReport& report)
+    bool ResampleStream::Refill(SourceReader& reader, AmUInt64 frames, AmUInt64 produced, PullReport& report)
     {
         if (frames == 0)
-            return;
+            return false;
 
         SourceReadReport read;
-        reader.Read(_fifo, _fifoCount, frames, read);
+        const AmUInt64 delivered = reader.Read(_fifo, _fifoCount, frames, read);
 
         // Input frames map to output frames through the mean ratio. At a constant ratio that is exact to within a frame;
         // during a ramp the frames between here and the event follow the ramp, not its mean, so an event lands up to
@@ -229,8 +241,11 @@ namespace SparkyStudios::Audio::Amplitude
             report.endFrame = toOutput(read.endOffset);
         }
 
-        report.starved |= read.starved;
-        _fifoCount += frames;
+        // An underrun holds the source position: only the frames the stream delivered enter the FIFO. Otherwise a
+        // non-looping end zero-fills past the end on purpose, and UpdateTail() relies on it.
+        _fifoCount += read.underrun ? delivered : frames;
+        report.underrun |= read.underrun;
+        return read.underrun;
     }
 
     void ResampleStream::Consume(AmUInt64 frames)

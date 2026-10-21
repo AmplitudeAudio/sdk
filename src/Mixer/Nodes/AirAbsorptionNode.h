@@ -1,0 +1,125 @@
+// Copyright (c) 2024-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#pragma once
+
+#ifndef _AM_IMPLEMENTATION_MIXER_NODES_AIR_ABSORPTION_NODE_H
+#define _AM_IMPLEMENTATION_MIXER_NODES_AIR_ABSORPTION_NODE_H
+
+#include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
+
+#include <DSP/Filters/BiquadResonantFilter.h>
+#include <DSP/Gain.h>
+
+namespace SparkyStudios::Audio::Amplitude
+{
+    class AmplimixLayer;
+    class AudioBufferCrossFader;
+
+    class AirAbsorptionEQFilter final
+    {
+    public:
+        static void Normalize(std::array<AmReal32, kAmAirAbsorptionBandCount>& gains, AmReal32& overallGain);
+
+        AirAbsorptionEQFilter();
+        ~AirAbsorptionEQFilter();
+
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount);
+
+        /**
+         * @brief Sets the EQ band gains, in dB (0 dB leaves a band untouched).
+         */
+        void SetGains(AmReal32 gainLow, AmReal32 gainMid, AmReal32 gainHigh);
+
+        void Process(const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate);
+
+    private:
+        void EnsureFilters();
+        void ApplyFilters(AmUInt32 set, const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate);
+        void CopyFilterState(AmUInt32 fromSet, AmUInt32 toSet);
+
+        BiquadResonantFilter _eqFilterFactory;
+
+        std::shared_ptr<FilterInstance> _lowShelfFilter[2];
+        std::shared_ptr<FilterInstance> _peakingFilter[2];
+        std::shared_ptr<FilterInstance> _highShelfFilter[2];
+
+        AudioBuffer _tempBuffer;
+        AudioBuffer _crossfadeBuffer;
+        AudioBufferCrossFader* _crossFader;
+
+        AmUInt32 _currentSet;
+        bool _needUpdateGains;
+    };
+
+    /**
+     * @brief Applies the air absorption of the attenuation of the layer, as a three-band EQ.
+     *
+     * The distance falloff itself is the job of the Attenuation node. This node only shapes the spectrum, so a pipeline
+     * can tap the signal before it for paths that should not lose their high frequencies with distance.
+     */
+    class AirAbsorptionNodeInstance final : public ProcessorNodeInstance
+    {
+    public:
+        AirAbsorptionNodeInstance();
+
+        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
+
+        const AudioBuffer* Process(const AudioBuffer* input) override;
+
+    private:
+        std::array<AmReal32, kAmAirAbsorptionBandCount> _gains;
+        AirAbsorptionEQFilter _eqFilter;
+        GainProcessor _gain[kAmMaxSupportedChannelCount];
+    };
+
+    class AirAbsorptionNode final : public Node
+    {
+    public:
+        AirAbsorptionNode();
+
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
+        {
+            return ampoolshared(eMemoryPoolKind_Amplimix, AirAbsorptionNodeInstance);
+        }
+
+        [[nodiscard]] AM_INLINE bool CanConsume() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE bool CanProduce() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMaxInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMinInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE eNodeChannelPolicy GetChannelPolicy() const override
+        {
+            return eNodeChannelPolicy_PerChannel;
+        }
+    };
+} // namespace SparkyStudios::Audio::Amplitude
+
+#endif // _AM_IMPLEMENTATION_MIXER_NODES_AIR_ABSORPTION_NODE_H

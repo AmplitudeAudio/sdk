@@ -33,6 +33,20 @@ namespace SparkyStudios::Audio::Amplitude
     typedef AmVoidPtr AmThreadHandle;
     typedef AmUInt64 AmThreadID;
 
+    /**
+     * @brief The scheduling priority of a thread.
+     *
+     * @ingroup core
+     */
+    enum class eThreadPriority : AmUInt8
+    {
+        /// The default priority of the platform.
+        Normal,
+
+        /// A priority slightly above the default, for threads that feed the audio device.
+        AboveNormal,
+    };
+
     namespace Thread
     {
         /**
@@ -113,6 +127,19 @@ namespace SparkyStudios::Audio::Amplitude
          * @ingroup core
          */
         AM_API_PUBLIC AmThreadID GetCurrentThreadId();
+
+        /**
+         * @brief Sets the scheduling priority of the calling thread.
+         *
+         * Best effort; returns @c false when the OS refuses it (for example without privileges). Applies to the calling thread.
+         *
+         * @param[in] priority The priority to request.
+         *
+         * @return @c true if the OS accepted the priority, @c false otherwise.
+         *
+         * @ingroup core
+         */
+        AM_API_PUBLIC bool SetCurrentThreadPriority(eThreadPriority priority);
 
         /**
          * @brief Gets the number of hardware CPU.

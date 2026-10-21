@@ -134,7 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmUInt64 read = drwav_read_pcm_frames_f32(&_wav, length, _scratch.GetBuffer());
 
-        Deinterleave(_scratch.GetBuffer(), 0, out->GetData().GetBuffer(), bufferOffset, length, _wav.channels);
+        Deinterleave(_scratch.GetBuffer(), out, bufferOffset, length, _wav.channels);
 
         return read;
     }
