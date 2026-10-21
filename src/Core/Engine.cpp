@@ -640,14 +640,12 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         {
-            // Both hooks are optional: get_symbol throws for a missing symbol.
             const auto findHook = [plugin](const char* name) -> void (*)(AmTime)
             {
                 try
                 {
-                    return reinterpret_cast<void (*)(AmTime)>(plugin->get_symbol(name));
-                }
-                catch (const std::exception&)
+                    return plugin->get_function<void(AmTime)>(name);
+                } catch (const std::exception&)
                 {
                     return nullptr;
                 }
