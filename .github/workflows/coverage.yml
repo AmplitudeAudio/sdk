@@ -406,7 +406,7 @@ jobs:
           xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m coverage ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=y --unit_tests=y --build_assets=y
 
       - name: Build
-        run: xmake b -y amplitude_tests test_plugin
+        run: xmake b -y amplitude_tests test_plugin test_plugin_no_hooks
 
       - name: Test
         shell: bash

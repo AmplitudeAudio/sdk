@@ -14,8 +14,6 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#ifndef AM_PLUGINS_UNSUPPORTED
-
 #if AM_PLATFORM_WIN
 #include <windows.h>
 #else
@@ -51,7 +49,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            Engine::AddPluginSearchPath(AM_OS_STRING(AM_TEST_PLUGIN_DIR));
             const AmVoidPtr handle = Engine::LoadPlugin(AM_OS_STRING("test_plugin"));
             AM_EXPECT(handle != nullptr);
 
@@ -91,7 +88,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            Engine::AddPluginSearchPath(AM_OS_STRING(AM_TEST_PLUGIN_DIR));
             AM_EXPECT(Engine::LoadPlugin(AM_OS_STRING("test_plugin_no_hooks")) != nullptr);
 
             InitializeConfig(AM_OS_STRING("tests.config.amconfig"));
@@ -110,7 +106,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            Engine::AddPluginSearchPath(AM_OS_STRING(AM_TEST_PLUGIN_DIR));
             InitializeConfig(AM_OS_STRING("tests.config.amconfig"));
             AM_EXPECT(amEngine->IsInitialized());
 
@@ -121,5 +116,3 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
     AM_REGISTER_TEST_REQUIRES_PLUGINS(core_engine, cannot_load_plugin_after_initialization);
 } // namespace SparkyStudios::Audio::Amplitude::Tests
-
-#endif

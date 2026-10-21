@@ -39,7 +39,7 @@ else
 
         add_deps("Amplitude::Shared")
 
-        add_files("test_plugin/*.cpp")
+        add_files("test_plugins/default.cpp")
     target_end()
 
     -- A plugin that exports none of the optional frame hooks.
@@ -50,7 +50,7 @@ else
 
         add_deps("Amplitude::Shared")
 
-        add_files("test_plugin_no_hooks/*.cpp")
+        add_files("test_plugins/without_update_hooks.cpp")
     target_end()
 
     includes("runners/desktop/xmake.lua")

@@ -538,7 +538,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
         {
             amLogError(
-                "The plugin '" AM_OS_CHAR_FMT "' cannot be loaded while the engine is initialized. Load plugins before Engine::Initialize().",
+                "The plugin '" AM_OS_CHAR_FMT
+                "' cannot be loaded while the engine is initialized. Load plugins before Engine::Initialize().",
                 pluginLibraryName.c_str());
             return nullptr;
         }
@@ -651,7 +652,7 @@ namespace SparkyStudios::Audio::Amplitude
                 }
             };
 
-            gPluginFrameHooks.push_back({ findHook("PluginBeforeUpdate"), findHook("PluginUpdate") });
+            gPluginFrameHooks.push_back({ .before = findHook("PluginBeforeUpdate"), .after = findHook("PluginUpdate") });
         }
 
         gLoadedPlugins[pluginPath] = plugin;
