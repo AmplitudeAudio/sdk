@@ -48,6 +48,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(TagSetContains(standaloneTags, a));
             AM_EXPECT(TagSetContains(standaloneTags, shared));
             AM_EXPECT_NOT(TagSetContains(standaloneTags, fromCollection));
+
+            const SoundInstanceSettings copy = standalone->GetSettings();
+            AM_EXPECT(copy.m_tags == standaloneTags);
             SoundImpl::DestroyInstance(standalone);
 
             SoundInstance* contained = tagged->CreateInstance(collection);

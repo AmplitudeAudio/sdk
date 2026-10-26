@@ -44,13 +44,16 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             const TagSet merged = UnionTags({ a, b });
             AM_EXPECT(merged != nullptr);
-            AM_EXPECT(merged != nullptr && *merged == std::vector<AmTagID>({ 1, 2, 3 }));
+            const auto span = TagSetSpan(merged);
+            AM_EXPECT(std::vector<AmTagID>(span.begin(), span.end()) == std::vector<AmTagID>({ 1, 2, 3 }));
+            AM_EXPECT(TagSetSpan(nullptr).empty());
 
             AM_EXPECT(UnionTags({ none, none }) == nullptr);
             AM_EXPECT(MakeTagSet(none) == nullptr);
 
             const TagSet made = MakeTagSet(a);
-            AM_EXPECT(made != nullptr && *made == a);
+            const auto madeSpan = TagSetSpan(made);
+            AM_EXPECT(std::vector<AmTagID>(madeSpan.begin(), madeSpan.end()) == a);
 
             AM_EXPECT_NOT(TagSetContains(nullptr, 1));
             AM_EXPECT(TagSetContains(merged, 2));

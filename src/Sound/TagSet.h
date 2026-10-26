@@ -29,9 +29,50 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     /**
+     * @brief An immutable array of tag identifiers, allocated through the memory manager.
+     */
+    class TagArray
+    {
+    public:
+        explicit TagArray(std::span<const AmTagID> tags)
+            : _size(tags.size())
+            , _data(static_cast<AmTagID*>(ampoolmalloc(eMemoryPoolKind_Amplimix, tags.size() * sizeof(AmTagID))))
+        {
+            std::copy(tags.begin(), tags.end(), _data);
+        }
+
+        ~TagArray()
+        {
+            ampoolfree(eMemoryPoolKind_Amplimix, _data);
+        }
+
+        TagArray(const TagArray&) = delete;
+        TagArray& operator=(const TagArray&) = delete;
+
+        [[nodiscard]] const AmTagID* begin() const
+        {
+            return _data;
+        }
+
+        [[nodiscard]] const AmTagID* end() const
+        {
+            return _data + _size;
+        }
+
+        [[nodiscard]] AmSize size() const
+        {
+            return _size;
+        }
+
+    private:
+        AmSize _size;
+        AmTagID* _data;
+    };
+
+    /**
      * @brief An immutable, sorted and duplicate-free set of tag identifiers. A null set means no tags.
      */
-    using TagSet = std::shared_ptr<const std::vector<AmTagID>>;
+    using TagSet = std::shared_ptr<const TagArray>;
 
     /**
      * @brief Creates a tag set from an already sorted list of tags.
@@ -45,7 +86,19 @@ namespace SparkyStudios::Audio::Amplitude
         if (sorted.empty())
             return nullptr;
 
-        return ampoolshared(eMemoryPoolKind_Amplimix, std::vector<AmTagID>, sorted.begin(), sorted.end());
+        return ampoolshared(eMemoryPoolKind_Amplimix, TagArray, sorted);
+    }
+
+    /**
+     * @brief Gets the tags of a tag set as a span.
+     *
+     * @param[in] set The tag set, which may be null.
+     *
+     * @return The sorted tags, or an empty span if the set is null. Valid while the set is alive.
+     */
+    [[nodiscard]] AM_INLINE std::span<const AmTagID> TagSetSpan(const TagSet& set)
+    {
+        return set == nullptr ? std::span<const AmTagID>() : std::span<const AmTagID>(set->begin(), set->size());
     }
 
     /**
