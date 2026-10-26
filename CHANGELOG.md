@@ -65,6 +65,16 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 
 ### Added
 
+- **Sound tags (new virtuals; an ABI break for binaries that call `Sound`, `Collection` or `SwitchContainer`).**
+  Sound, collection and switch container definitions take a `tags` list of strings; an empty tag string fails the load
+  of the asset that carries it. `CreateTagId` hashes a tag name to an `AmTagID` (the engine refuses to load assets whose
+  tags collide). `SoundObject::GetTags()` and `HasTag()` report the object's own tags, sorted. A playing sound carries
+  the union of its tags, its collection's and its switch container's: `AmplimixLayer::GetTags()` and `HasTag()` expose
+  it to node plugins. Source stays compatible, since all four are non-pure. ABI: the two virtuals added to
+  `SoundObject` shift the slots of the virtuals `Sound`, `Collection` and `SwitchContainer` declare after it, so any
+  binary calling virtuals on those handles (for example `IsLoop()` through a `SoundHandle`) must be recompiled. The two
+  added to `AmplimixLayer` sit at the end of a leaf interface: old callers are unaffected, and only out-of-tree
+  `AmplimixLayer` subclasses need a recompile.
 - Surround output. The engine configuration's new `output.channels` renders Mono, Stereo, Quad, 5.1 or 7.1 (default
   Stereo); `Default` takes the device's native layout. `Engine::GetOutputLayout()` reports the active layout.
 - `AmbisonicSpeakerDecoder` decodes the ambisonic branch to the output speakers; `sample_project/pipelines/surround.json`

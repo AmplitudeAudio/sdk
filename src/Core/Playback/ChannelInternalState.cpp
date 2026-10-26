@@ -22,6 +22,7 @@
 #include <Core/EntityInternalState.h>
 #include <Core/Playback/BusInternalState.h>
 #include <Core/Playback/ChannelInternalState.h>
+#include <Sound/TagSet.h>
 
 #include <Utils/intrusive_list.h>
 #include <Utils/Utils.h>
@@ -1027,9 +1028,11 @@ namespace SparkyStudios::Audio::Amplitude
                 continue;
 
             SoundImpl* sound;
+            std::span<const AmTagID> collectionTags;
 
             if (Collection* collection = _engine->GetCollectionHandle(item.m_id); collection != nullptr)
             {
+                collectionTags = collection->GetTags();
                 sound = _entity.Valid() ? static_cast<SoundImpl*>(collection->SelectFromEntity(_entity, _realChannel._playedSounds))
                                         : static_cast<SoundImpl*>(collection->SelectFromWorld(_realChannel._playedSounds));
             }
@@ -1057,6 +1060,7 @@ namespace SparkyStudios::Audio::Amplitude
             settings.m_loop = sound->IsLoop();
             settings.m_loopCount = sound->GetLoopCount();
             settings.m_effectID = definition->effect();
+            settings.m_tags = UnionTags({ sound->GetTags(), collectionTags, _switchContainer->GetTags() });
 
             instances.push_back(ampoolnew(
                 eMemoryPoolKind_Amplimix, SoundInstance, sound, settings, static_cast<const EffectImpl*>(_switchContainer->GetEffect())));
@@ -1128,7 +1132,8 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        SoundInstance* instance = sound->CreateInstance();
+        // The sound plays with its own settings; the collection adds its tags to the effective ones.
+        SoundInstance* instance = sound->CreateInstance(UnionTags({ sound->GetTags(), _collection->GetTags() }));
 
         const bool success = _realChannel.Play(instance, kAmInvalidObjectId, options);
         if (!success)

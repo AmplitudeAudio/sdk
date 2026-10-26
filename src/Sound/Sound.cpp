@@ -85,6 +85,16 @@ namespace SparkyStudios::Audio::Amplitude
         return ampoolnew(eMemoryPoolKind_Amplimix, SoundInstance, this, _settings, m_effect);
     }
 
+    SoundInstance* SoundImpl::CreateInstance(const TagSet& tags)
+    {
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
+
+        SoundInstanceSettings settings = _settings;
+        settings.m_tags = tags;
+
+        return ampoolnew(eMemoryPoolKind_Amplimix, SoundInstance, this, settings, m_effect);
+    }
+
     SoundInstance* SoundImpl::CreateInstance(const CollectionImpl* collection)
     {
         if (collection == nullptr)

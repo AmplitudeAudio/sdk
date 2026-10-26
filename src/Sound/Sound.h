@@ -120,6 +120,17 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] SoundInstance* CreateInstance(const CollectionImpl* collection);
 
         /**
+         * @brief Create a new SoundInstance from this Sound, with the effective tags replaced.
+         *
+         * The SoundInstance created this way uses the settings of the Sound object, except for its tags.
+         *
+         * @param tags The effective tags of the instance.
+         *
+         * @return SoundInstance* A sound instance which can be played.
+         */
+        [[nodiscard]] SoundInstance* CreateInstance(const TagSet& tags);
+
+        /**
          * @brief Returns the SoundChunk associated with this Sound
          * and increment its reference counter.
          *
