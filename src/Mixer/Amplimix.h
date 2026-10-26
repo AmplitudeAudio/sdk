@@ -34,6 +34,7 @@
 #include <Mixer/LayerGainMixer.h>
 #include <Mixer/SoundData.h>
 #include <Mixer/Streaming/StreamingThread.h>
+#include <Mixer/Voice/VirtualCursor.h>
 #include <Mixer/Voice/Voice.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
@@ -91,6 +92,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 currentSpeed = 1.0f; // smoothed pitch x play speed, audio thread
         std::atomic<eVoiceState> voiceState{ eVoiceState::Idle }; // voice state after the last block, for any thread
         std::atomic<AmUInt64> voicePosition{ 0 }; // voice source position after the last block, for any thread
+        VirtualCursor resumeCursor; // the virtual cursor a scheduled streamed voice resumes; written before the layer is live
+        std::atomic<bool> resumesCursor{ false }; // the position of a not yet started voice follows resumeCursor
         std::atomic<AmReal32> gain; // gain
         std::atomic<AmReal32> pitch; // pitch
         SoundData* snd = nullptr; // sound data
@@ -630,6 +633,7 @@ namespace SparkyStudios::Audio::Amplitude
         void DestroyDetachedLayers();
         bool TryDestroyLayer(AmplimixLayerImpl* layer);
         void UpdateVoiceBlockFrames();
+        [[nodiscard]] AmUInt64 GetStreamCapacityFloor(AmUInt32 sampleRate) const;
         void DrainVoiceCommands();
         void UpdateStreams();
         bool AttachStreamedInstance(AmplimixLayerImpl* layer, AmUInt32 id, AmChannelInstanceID instanceId, AmUInt64 cursor);

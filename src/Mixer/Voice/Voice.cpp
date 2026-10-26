@@ -75,7 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         _evictedCommands = 0;
 
         _publishedState.store(_state, std::memory_order_release);
-        _publishedPosition.store(_slots[0].stream.GetSourcePosition(_slots[0].reader), std::memory_order_release);
+        _publishedPosition.store(GetReportedPosition(_slots[0], kVoiceAsap), std::memory_order_release);
         _publishedLate.store(0, std::memory_order_release);
         _publishedEvicted.store(0, std::memory_order_release);
         return true;
@@ -447,6 +447,28 @@ namespace SparkyStudios::Audio::Amplitude
         slot.stream.Seek(slot.reader, position);
     }
 
+    AmUInt64 Voice::GetStartPositionAt(AmUInt64 frame) const
+    {
+        if (_settings.startPositionClock == kVoiceAsap || frame == kVoiceAsap || frame <= _settings.startPositionClock)
+            return _settings.startPosition;
+
+        const VoiceStreamSlot& slot = _slots[_primary];
+        const AmReal64 rate = static_cast<AmReal64>(_settings.source.sampleRate) * _speed / static_cast<AmReal64>(_settings.outputRate);
+
+        VirtualCursor cursor;
+        cursor.Anchor(
+            _settings.startPosition, _settings.startPositionClock, rate, slot.reader.GetRegionStart(), slot.reader.GetRegionEnd(),
+            slot.reader.IsLooping());
+
+        return cursor.PositionAt(frame);
+    }
+
+    AmUInt64 Voice::GetReportedPosition(const VoiceStreamSlot& slot, AmUInt64 frame) const
+    {
+        // A streamed reader sits at its region start until StartPlaying() seeks it: report where it would start instead.
+        return _seekOnStart ? GetStartPositionAt(frame) : slot.stream.GetSourcePosition(slot.reader);
+    }
+
     void Voice::StartPlaying(AmUInt64 frame)
     {
         _state = eVoiceState::Playing;
@@ -458,21 +480,7 @@ namespace SparkyStudios::Audio::Amplitude
         if (resumesCursor || _seekOnStart)
         {
             VoiceStreamSlot& slot = _slots[_primary];
-            AmUInt64 position = _settings.startPosition;
-            if (resumesCursor)
-            {
-                const AmReal64 rate =
-                    static_cast<AmReal64>(_settings.source.sampleRate) * _speed / static_cast<AmReal64>(_settings.outputRate);
-
-                VirtualCursor cursor;
-                cursor.Anchor(
-                    _settings.startPosition, _settings.startPositionClock, rate, slot.reader.GetRegionStart(), slot.reader.GetRegionEnd(),
-                    slot.reader.IsLooping());
-
-                position = cursor.PositionAt(frame);
-            }
-
-            slot.stream.Seek(slot.reader, position);
+            slot.stream.Seek(slot.reader, GetStartPositionAt(frame));
             _seekOnStart = false;
         }
 
@@ -908,7 +916,7 @@ namespace SparkyStudios::Audio::Amplitude
         // While a crossfade is active, the incoming stream is the position the voice is transitioning to; report it
         // instead of the outgoing (still primary) stream's.
         const VoiceStreamSlot& slot = _crossfadeRemaining > 0 ? _slots[1 - _primary] : _slots[_primary];
-        const AmUInt64 position = slot.stream.GetSourcePosition(slot.reader);
+        const AmUInt64 position = GetReportedPosition(slot, _blockClock + _blockFrames);
 
         if (_positionPending)
         {

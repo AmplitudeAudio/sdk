@@ -85,6 +85,9 @@ namespace SparkyStudios::Audio::Amplitude
     /// Frames of the stand-in ring a streamed voice is created over, until its planned stream is bound.
     static constexpr AmUInt64 kPlaceholderRingFrames = 16;
 
+    /// Voice blocks of source audio a stream ring always holds: one block read at up to this play speed.
+    static constexpr AmUInt64 kStreamRingBlocks = 4;
+
     /// Wraps a looping sound of @p loopCount total plays may make.
     static AmUInt32 StreamWraps(bool loop, AmUInt32 loopCount)
     {
@@ -231,6 +234,17 @@ namespace SparkyStudios::Audio::Amplitude
     {
         const auto channels = static_cast<AmUInt64>(_device.mRequestedOutputChannels);
         _voiceBlockFrames = channels > 0 ? AM_MAX(static_cast<AmUInt64>(_device.mOutputBufferSize) / channels, 1ULL) : 1ULL;
+    }
+
+    AmUInt64 AmplimixImpl::GetStreamCapacityFloor(AmUInt32 sampleRate) const
+    {
+        const AmUInt32 outputRate = AMPLIMIX_LOAD_RELAXED(&_mixOutputSampleRate);
+        if (outputRate == 0)
+            return 0;
+
+        // Source frames one voice block reads at the nominal speed, rounded up.
+        const AmUInt64 blockSourceFrames = (_voiceBlockFrames * sampleRate + outputRate - 1) / outputRate;
+        return blockSourceFrames * kStreamRingBlocks;
     }
 
     AmUInt64 AmplimixImpl::Mix(AudioBuffer** outBuffer, AmUInt64 frameCount)
@@ -415,6 +429,7 @@ namespace SparkyStudios::Audio::Amplitude
         lay->detached.store(false, std::memory_order_relaxed);
         lay->voiceState.store(voice->GetPublishedState(), std::memory_order_relaxed);
         lay->voicePosition.store(voice->GetPublishedPosition(), std::memory_order_relaxed);
+        lay->resumesCursor.store(false, std::memory_order_relaxed);
         lay->muted = false;
         lay->stopRequested = false;
         AMPLIMIX_STORE(&lay->gain, options.gain);
@@ -475,19 +490,21 @@ namespace SparkyStudios::Audio::Amplitude
                 const AmUInt64 frame = options.startFrame != kVoiceAsap ? std::max(now, options.startFrame) : now;
                 const AmReal64 speed = settings.speed > 0.0 && std::isfinite(settings.speed) ? settings.speed : 1.0;
 
-                VirtualCursor cursor;
-                cursor.Anchor(
+                lay->resumeCursor.Anchor(
                     options.startPosition, options.startPositionClock,
                     static_cast<AmReal64>(sound->format.GetSampleRate()) * speed / static_cast<AmReal64>(outputRate), 0, sound->length,
                     options.loop);
-                startTarget = cursor.PositionAt(frame);
+                lay->resumesCursor.store(true, std::memory_order_relaxed);
+                startTarget = lay->resumeCursor.PositionAt(frame);
             }
 
             AmUInt64 preroll = 0;
             const StreamPlan plan = PlanStream(
                 0, sound->length, options.loop, lay->streamWraps, std::min(startTarget, sound->length), lay->prerollFrames, preroll);
 
-            stream = streaming->Create(std::move(decoder), plan, sound->format.GetNumChannels(), sound->format.GetSampleRate());
+            stream = streaming->Create(
+                std::move(decoder), plan, sound->format.GetNumChannels(), sound->format.GetSampleRate(),
+                GetStreamCapacityFloor(sound->format.GetSampleRate()));
             streaming->WakeUp();
             voice->BindStream(stream);
 
@@ -875,6 +892,12 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         position = lay.voicePosition.load(std::memory_order_acquire);
+
+        // A streamed voice resuming a virtual cursor waits for its prefill before it renders: until it starts, it stands
+        // where the cursor does, or a demotion in that window would anchor the cursor back on the frame it resumed from.
+        if (lay.resumesCursor.load(std::memory_order_acquire) && lay.voiceState.load(std::memory_order_acquire) == eVoiceState::Scheduled)
+            position = lay.resumeCursor.PositionAt(GetAudioClock());
+
         return true;
     }
 
@@ -1030,7 +1053,8 @@ namespace SparkyStudios::Audio::Amplitude
         const StreamPlan plan = PlanStream(lay->start, lay->end, lay->streamLoop, lay->streamWraps, target, lay->prerollFrames, preroll);
 
         const SoundFormat& format = lay->snd->format;
-        StreamSource* source = lay->streaming->Create(std::move(decoder), plan, format.GetNumChannels(), format.GetSampleRate());
+        StreamSource* source = lay->streaming->Create(
+            std::move(decoder), plan, format.GetNumChannels(), format.GetSampleRate(), GetStreamCapacityFloor(format.GetSampleRate()));
         lay->streaming->WakeUp();
 
         // Bound to the instance's own stream: never the voice's current one, which swaps and is retired.
@@ -1167,6 +1191,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (lay->streaming != nullptr && lay->id != id)
             return false;
 
+        // The explicit position wins over the virtual cursor the voice was resuming from.
+        lay->resumesCursor.store(false, std::memory_order_release);
+
         // In-memory voices seek in place.
         if (lay->streaming == nullptr)
         {
@@ -1222,7 +1249,8 @@ namespace SparkyStudios::Audio::Amplitude
             PlanStream(layer->start, layer->end, layer->streamLoop, wraps, std::min(position, layer->end), layer->prerollFrames, preroll);
 
         const SoundFormat& format = layer->snd->format;
-        StreamSource* stream = streaming->Create(std::move(decoder), plan, format.GetNumChannels(), format.GetSampleRate());
+        StreamSource* stream = streaming->Create(
+            std::move(decoder), plan, format.GetNumChannels(), format.GetSampleRate(), GetStreamCapacityFloor(format.GetSampleRate()));
         streaming->WakeUp();
 
         layer->swapPosted = false;

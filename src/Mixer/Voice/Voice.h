@@ -274,6 +274,8 @@ namespace SparkyStudios::Audio::Amplitude
         void ApplyCommandsAt(AmUInt64 frame);
         void Apply(const VoiceCommand& command, AmUInt64 frame);
         void StartPlaying(AmUInt64 frame);
+        [[nodiscard]] AmUInt64 GetStartPositionAt(AmUInt64 frame) const;
+        [[nodiscard]] AmUInt64 GetReportedPosition(const VoiceStreamSlot& slot, AmUInt64 frame) const;
         void BeginFade(AmReal32 target, AmTime duration, AmUInt64 frame, eVoiceFadeTarget fadeTarget);
         void FinishFade(AmUInt64 frame);
         void Finish(AmUInt64 frame);

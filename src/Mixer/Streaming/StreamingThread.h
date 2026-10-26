@@ -101,10 +101,16 @@ namespace SparkyStudios::Audio::Amplitude
          * @param plan The play plan.
          * @param channels The channel count.
          * @param sampleRate The sample rate.
+         * @param minCapacity The fewest frames the ring holds, whatever the settings: what one consumer block reads.
          *
          * @return The source, owned by this object until Retire().
          */
-        StreamSource* Create(std::shared_ptr<Codec::Decoder> decoder, const StreamPlan& plan, AmUInt16 channels, AmUInt32 sampleRate);
+        StreamSource* Create(
+            std::shared_ptr<Codec::Decoder> decoder,
+            const StreamPlan& plan,
+            AmUInt16 channels,
+            AmUInt32 sampleRate,
+            AmUInt64 minCapacity = 0);
 
         /**
          * @brief Whether a source holds at least the prefill, or is completely filled.
@@ -179,6 +185,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmThreadHandle _thread = nullptr;
         std::atomic<bool> _running{ false };
         bool _stopping = false; ///< Set under _mutex while Stop() joins the worker.
+        bool _warnedSmallBuffer = false; ///< Game thread only.
 
         std::mutex _mutex;
         std::condition_variable _wake;

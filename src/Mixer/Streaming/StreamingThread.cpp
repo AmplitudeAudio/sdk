@@ -16,6 +16,7 @@
 #include <chrono>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/IO/Log.h>
 
 #include <Mixer/Streaming/StreamingThread.h>
 #include <Mixer/Voice/VoiceTypes.h>
@@ -118,10 +119,22 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     StreamSource* StreamingThread::Create(
-        std::shared_ptr<Codec::Decoder> decoder, const StreamPlan& plan, AmUInt16 channels, AmUInt32 sampleRate)
+        std::shared_ptr<Codec::Decoder> decoder, const StreamPlan& plan, AmUInt16 channels, AmUInt32 sampleRate, AmUInt64 minCapacity)
     {
         const AmUInt64 prefill = GetPrefillFrames(sampleRate);
-        const AmUInt64 capacity = std::max<AmUInt64>({ MillisecondsToFrames(_settings.bufferMs, sampleRate), 2 * prefill, 1 });
+        const AmUInt64 configured = std::max<AmUInt64>(MillisecondsToFrames(_settings.bufferMs, sampleRate), 2 * prefill);
+
+        // A ring smaller than one consumer block underruns on every block, whatever the producer does.
+        if (configured < minCapacity && !_warnedSmallBuffer)
+        {
+            _warnedSmallBuffer = true;
+            amLogWarning(
+                "The streaming buffer (%llu frames) is smaller than one mixer block reads (%llu frames): it is enlarged. Raise "
+                "streaming.buffer_ms to silence this warning.",
+                static_cast<unsigned long long>(configured), static_cast<unsigned long long>(minCapacity));
+        }
+
+        const AmUInt64 capacity = std::max<AmUInt64>({ configured, minCapacity, 1 });
 
         auto* source = ampoolnew(
             eMemoryPoolKind_Amplimix, StreamSource, std::move(decoder), plan, capacity, channels, _settings.chunkFrames, sampleRate,
