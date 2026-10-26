@@ -17,6 +17,8 @@
 #ifndef _AM_SOUND_SOUND_OBJECT_H
 #define _AM_SOUND_SOUND_OBJECT_H
 
+#include <span>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
@@ -95,6 +97,29 @@ namespace SparkyStudios::Audio::Amplitude
          * @return The sound object's scope.
          */
         [[nodiscard]] virtual eScope GetScope() const = 0;
+
+        /**
+         * @brief Gets the tags of this sound object.
+         *
+         * @return The tag identifiers, sorted ascending. Empty if the object has no tags.
+         */
+        [[nodiscard]] virtual std::span<const AmTagID> GetTags() const
+        {
+            return {};
+        }
+
+        /**
+         * @brief Checks whether this sound object has the given tag.
+         *
+         * @param[in] tag The tag identifier, as returned by `CreateTagId`.
+         *
+         * @return `true` if the object carries the tag.
+         */
+        [[nodiscard]] virtual bool HasTag(AmTagID tag) const
+        {
+            AM_UNUSED(tag);
+            return false;
+        }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

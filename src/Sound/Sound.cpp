@@ -17,6 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Engine.h>
+#include <Core/TagRegistry.h>
 #include <Mixer/SoundData.h>
 #include <Sound/Sound.h>
 
@@ -75,6 +76,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_spatialization = eSpatialization_None;
         m_scope = eScope_World;
+        m_tags.clear();
     }
 
     SoundInstance* SoundImpl::CreateInstance()
@@ -303,6 +305,9 @@ namespace SparkyStudios::Audio::Amplitude
         m_name = definition->name()->str();
         m_spatialization = static_cast<eSpatialization>(definition->spatialization());
         m_scope = static_cast<eScope>(definition->scope());
+
+        if (!LoadTags(definition->tags(), "sound", definition->name()->c_str(), state->tag_registry, m_tags))
+            return false;
 
         auto fs = amEngine->GetFileSystem();
 

@@ -239,6 +239,22 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
         /**
+         * @copydoc SoundObject::GetTags
+         */
+        [[nodiscard]] AM_INLINE std::span<const AmTagID> GetTags() const override
+        {
+            return SoundObjectImpl::GetTags();
+        }
+
+        /**
+         * @copydoc SoundObject::HasTag
+         */
+        [[nodiscard]] AM_INLINE bool HasTag(AmTagID tag) const override
+        {
+            return SoundObjectImpl::HasTag(tag);
+        }
+
+        /**
          * @copydoc Sound::IsStream
          */
         [[nodiscard]] bool IsStream() const override;

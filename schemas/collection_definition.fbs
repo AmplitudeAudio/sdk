@@ -177,6 +177,9 @@ table CollectionDefinition {
 
   /// The fader algorithm used by this collection.
   fader:string;
+
+  /// The tags of this collection, used to match it with sound selectors.
+  tags:[string];
 }
 
 root_type CollectionDefinition;
