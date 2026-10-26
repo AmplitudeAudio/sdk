@@ -37,8 +37,9 @@ namespace SparkyStudios::Audio::Amplitude
         }
     } // namespace
 
-    StreamingThread::StreamingThread(const StreamingSettings& settings)
+    StreamingThread::StreamingThread(const StreamingSettings& settings, ThreadFactory createThread)
         : _settings(settings)
+        , _createThread(createThread)
     {
         _settings.chunkFrames = std::max<AmUInt64>(_settings.chunkFrames, 1);
         _sources.reserve(kInitialSources);
@@ -83,9 +84,14 @@ namespace SparkyStudios::Audio::Amplitude
 
         _lastPassTicks = NowTicks();
         _running.store(true, std::memory_order_release);
-        _thread = Thread::CreateThread(&StreamingThread::Run, this);
+        _thread = _createThread != nullptr ? _createThread(&StreamingThread::Run, this) : nullptr;
         if (_thread == nullptr)
+        {
+            // Without a worker nothing would refill the streams past their prefill: their consumers fill them instead.
             _running.store(false, std::memory_order_release);
+            _settings.synchronous = true;
+            amLogError("Cannot start the streaming thread: streamed sounds are decoded on the audio thread instead.");
+        }
     }
 
     void StreamingThread::Stop()
@@ -121,6 +127,23 @@ namespace SparkyStudios::Audio::Amplitude
     StreamSource* StreamingThread::Create(
         std::shared_ptr<Codec::Decoder> decoder, const StreamPlan& plan, AmUInt16 channels, AmUInt32 sampleRate, AmUInt64 minCapacity)
     {
+        return Make(std::move(decoder), nullptr, plan, channels, sampleRate, minCapacity);
+    }
+
+    StreamSource* StreamingThread::CreateDeferred(
+        StreamDecoderOpener opener, const StreamPlan& plan, AmUInt16 channels, AmUInt32 sampleRate, AmUInt64 minCapacity)
+    {
+        return Make(nullptr, std::move(opener), plan, channels, sampleRate, minCapacity);
+    }
+
+    StreamSource* StreamingThread::Make(
+        std::shared_ptr<Codec::Decoder> decoder,
+        StreamDecoderOpener opener,
+        const StreamPlan& plan,
+        AmUInt16 channels,
+        AmUInt32 sampleRate,
+        AmUInt64 minCapacity)
+    {
         const AmUInt64 prefill = GetPrefillFrames(sampleRate);
         const AmUInt64 configured = std::max<AmUInt64>(MillisecondsToFrames(_settings.bufferMs, sampleRate), 2 * prefill);
 
@@ -139,6 +162,9 @@ namespace SparkyStudios::Audio::Amplitude
         auto* source = ampoolnew(
             eMemoryPoolKind_Amplimix, StreamSource, std::move(decoder), plan, capacity, channels, _settings.chunkFrames, sampleRate,
             _settings.synchronous);
+
+        if (opener)
+            source->DeferDecoder(std::move(opener));
 
         if (_settings.synchronous || !IsRunning())
         {

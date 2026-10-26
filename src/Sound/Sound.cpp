@@ -502,29 +502,35 @@ namespace SparkyStudios::Audio::Amplitude
         return std::exchange(_decoder, nullptr);
     }
 
-    std::shared_ptr<Codec::Decoder> SoundInstance::OpenStreamDecoder() const
+    std::function<std::shared_ptr<Codec::Decoder>()> SoundInstance::MakeStreamDecoderOpener() const
     {
         AMPLITUDE_ASSERT(Valid());
 
         if (!_parent->_stream || _parent->_codec == nullptr)
-            return nullptr;
+            return {};
 
-        const auto filename = _parent->GetPath();
-        const auto file = amEngine->GetFileSystem()->OpenFile(filename);
-        if (file == nullptr || !file->IsValid())
+        return [codec = _parent->_codec, fileSystem = amEngine->GetFileSystem(),
+                filename = _parent->GetPath()]() -> std::shared_ptr<Codec::Decoder>
         {
-            amLogError("Cannot open a stream decoder: unable to open '" AM_OS_CHAR_FMT "'.", filename.c_str());
-            return nullptr;
-        }
+            const auto file = fileSystem != nullptr ? fileSystem->OpenFile(filename) : nullptr;
+            if (file == nullptr || !file->IsValid())
+            {
+                amLogError("Cannot open a stream decoder: unable to open '" AM_OS_CHAR_FMT "'.", filename.c_str());
+                return nullptr;
+            }
 
-        auto decoder = _parent->_codec->CreateDecoder();
-        if (decoder == nullptr || !decoder->Open(file))
-        {
-            amLogError("Cannot open a stream decoder: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.", filename.c_str());
-            return nullptr;
-        }
+            auto decoder = codec->CreateDecoder();
+            if (decoder == nullptr || !decoder->Open(file))
+            {
+                if (decoder != nullptr)
+                    decoder->Close();
 
-        return decoder;
+                amLogError("Cannot open a stream decoder: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.", filename.c_str());
+                return nullptr;
+            }
+
+            return decoder;
+        };
     }
 
     void SoundInstance::Destroy()

@@ -62,9 +62,17 @@ namespace SparkyStudios::Audio::Amplitude
     {
     public:
         /**
-         * @brief Creates a streaming thread. The worker is not started.
+         * @brief Creates the thread of a worker. Returns nullptr when it cannot be created.
          */
-        explicit StreamingThread(const StreamingSettings& settings);
+        using ThreadFactory = AmThreadHandle (*)(AmThreadFunction function, AmVoidPtr parameter);
+
+        /**
+         * @brief Creates a streaming thread. The worker is not started.
+         *
+         * @param settings The streaming settings.
+         * @param createThread Creates the worker's thread.
+         */
+        explicit StreamingThread(const StreamingSettings& settings, ThreadFactory createThread = &Thread::CreateThread);
 
         /**
          * @brief Stops the worker and frees every remaining source.
@@ -76,6 +84,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         /**
          * @brief Starts the worker. Game thread. No-op in synchronous mode or when already running.
+         *
+         * When the worker cannot be started, the streaming thread falls back to synchronous mode: streams are then
+         * filled by their consumer.
          */
         void Start();
 
@@ -111,6 +122,23 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt16 channels,
             AmUInt32 sampleRate,
             AmUInt64 minCapacity = 0);
+
+        /**
+         * @brief Creates and registers a stream source whose decoder is opened by its producer.
+         *
+         * Same as Create(), but the file is opened by the worker instead of the calling thread. In synchronous mode,
+         * or when the worker is not running, it is opened here by the inline prefill. Game thread.
+         *
+         * @param opener Opens the decoder, closed when the source is freed. The stream fails when it returns nullptr.
+         * @param plan The play plan.
+         * @param channels The channel count.
+         * @param sampleRate The sample rate.
+         * @param minCapacity The fewest frames the ring holds, whatever the settings: what one consumer block reads.
+         *
+         * @return The source, owned by this object until Retire().
+         */
+        StreamSource* CreateDeferred(
+            StreamDecoderOpener opener, const StreamPlan& plan, AmUInt16 channels, AmUInt32 sampleRate, AmUInt64 minCapacity = 0);
 
         /**
          * @brief Whether a source holds at least the prefill, or is completely filled.
@@ -180,8 +208,16 @@ namespace SparkyStudios::Audio::Amplitude
         bool UpdateRates(std::vector<Entry>& entries, AmReal64 elapsedSeconds);
         bool HasPendingWork();
         static void Free(StreamSource* source);
+        StreamSource* Make(
+            std::shared_ptr<Codec::Decoder> decoder,
+            StreamDecoderOpener opener,
+            const StreamPlan& plan,
+            AmUInt16 channels,
+            AmUInt32 sampleRate,
+            AmUInt64 minCapacity);
 
         StreamingSettings _settings;
+        ThreadFactory _createThread;
         AmThreadHandle _thread = nullptr;
         std::atomic<bool> _running{ false };
         bool _stopping = false; ///< Set under _mutex while Stop() joins the worker.

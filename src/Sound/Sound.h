@@ -17,6 +17,8 @@
 #ifndef _AM_IMPLEMENTATION_SOUND_SOUND_H
 #define _AM_IMPLEMENTATION_SOUND_SOUND_H
 
+#include <functional>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Codec.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Sound.h>
@@ -365,13 +367,14 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] std::shared_ptr<Codec::Decoder> TakeStreamDecoder();
 
         /**
-         * @brief Opens a new decoder on the file of this instance (game thread).
+         * @brief Makes a function opening a new decoder on the file of this instance (game thread).
          *
-         * Used to give every extra stream (a seek, an instance) its own decoder position.
+         * Used to give every extra stream (a seek, an instance) its own decoder position. The function holds what it
+         * needs, so it may be called on any thread, after this instance is gone; it returns @c nullptr on failure (logged).
          *
-         * @return The opened decoder, or @c nullptr on failure (logged).
+         * @return The opener, or an empty function when this instance is not streamed.
          */
-        [[nodiscard]] std::shared_ptr<Codec::Decoder> OpenStreamDecoder() const;
+        [[nodiscard]] std::function<std::shared_ptr<Codec::Decoder>()> MakeStreamDecoderOpener() const;
 
         /**
          * @brief Destroys the audio sample loaded by this Sound and

@@ -18,6 +18,7 @@
 #define _AM_IMPLEMENTATION_MIXER_STREAMING_STREAM_SOURCE_H
 
 #include <atomic>
+#include <functional>
 #include <memory>
 
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
@@ -28,6 +29,11 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
+    /**
+     * @brief Opens the decoder of a stream on its producer thread. Returns nullptr when the decoder cannot be opened.
+     */
+    using StreamDecoderOpener = std::function<std::shared_ptr<Codec::Decoder>()>;
+
     /**
      * @brief Describes the frames a stream ring will hold, in play order.
      */
@@ -125,6 +131,13 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 Fill(AmUInt64 maxFrames);
 
         /**
+         * @brief Opens the decoder on the first Fill() instead of taking an open one. Before the source is shared.
+         *
+         * @param opener Called once, by the producer. A source whose decoder cannot be opened is marked failed.
+         */
+        void DeferDecoder(StreamDecoderOpener opener);
+
+        /**
          * @brief Forgets which thread fills this source, so another thread may take over.
          *
          * Call it only while no thread is inside Fill(), after handing the producer role over (debug builds only
@@ -201,6 +214,7 @@ namespace SparkyStudios::Audio::Amplitude
         void AssertProducerThread();
 
         std::shared_ptr<Codec::Decoder> _decoder;
+        StreamDecoderOpener _opener; ///< Producer only, once the source is shared.
         StreamPlan _plan;
         StreamRing _ring;
         AudioBuffer _chunk;

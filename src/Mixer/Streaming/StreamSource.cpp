@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
@@ -104,9 +105,26 @@ namespace SparkyStudios::Audio::Amplitude
 #endif
     }
 
+    void StreamSource::DeferDecoder(StreamDecoderOpener opener)
+    {
+        _opener = std::move(opener);
+    }
+
     AmUInt64 StreamSource::Fill(AmUInt64 maxFrames)
     {
         AssertProducerThread();
+
+        // Opening reads the file: done here, by the producer, and only once whatever it gives.
+        if (_opener)
+        {
+            const StreamDecoderOpener opener = std::exchange(_opener, nullptr);
+            _decoder = opener();
+            if (_decoder == nullptr)
+            {
+                _ring.MarkFailed();
+                return 0;
+            }
+        }
 
         AmUInt64 written = 0;
         while (written < maxFrames && !IsFilled())

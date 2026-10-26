@@ -79,8 +79,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             for (AmUInt32 i = 0; i < 10; ++i)
                 Frame();
 
-            // The voice's decoder and the one of the cancelled seek: no swap was ever posted or adopted.
-            AM_EXPECT_EQ(2ULL, static_cast<AmUInt64>(RecordingState::Get().GetDecoders().size()));
+            // The voice's decoder, and the one of the cancelled seek if the worker opened it before the stop retired its
+            // stream: no swap was ever posted or adopted.
+            const auto decoders = static_cast<AmUInt64>(RecordingState::Get().GetDecoders().size());
+            AM_EXPECT(decoders >= 1 && decoders <= 2);
             AM_EXPECT(RecordingState::Get().AllClosedOnce());
             AM_EXPECT(!channel.Playing());
         }

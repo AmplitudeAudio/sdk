@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdlib>
+
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/EngineInternalState.h>
@@ -100,18 +102,34 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT_EQ(2U, state.swapsAdopted);
             AM_EXPECT_EQ(0U, state.swapsDropped);
 
-            // The voice's decoder, then one per seek: the two superseded ones were freed before the end of the test.
+            // The voice's decoder, then one per adopted seek. The worker opens a seek's decoder, so a superseded seek
+            // retired before the worker reached it never opens one; any that did were freed before the end of the test.
+            // An adopted seek's decoder first streams from its target (less the resampler preroll).
             const auto decoders = RecordingState::Get().GetDecoders();
-            AM_EXPECT_EQ(5ULL, static_cast<AmUInt64>(decoders.size()));
-            if (decoders.size() == 5)
+            AM_EXPECT(decoders.size() >= 3 && decoders.size() <= 5);
+
+            const auto frames = static_cast<AmInt64>(format.GetFramesCount());
+            const auto startsAt = [frames](const RecordedDecoder& decoder, AmReal64 ratio)
             {
-                AM_EXPECT(FramesUntil(
-                    [&]()
-                    {
-                        return decoders[1]->closed.load() == 1 && decoders[2]->closed.load() == 1;
-                    },
-                    150));
-            }
+                const AmInt64 offset = decoder.firstSeekOffset.load();
+                return offset >= 0 && std::abs(offset - static_cast<AmInt64>(static_cast<AmReal64>(frames) * ratio)) < 8192;
+            };
+
+            AmUInt64 adopted = 0;
+            for (AmSize i = 1; i < decoders.size(); ++i)
+                adopted += startsAt(*decoders[i], 0.2) || startsAt(*decoders[i], 0.4) ? 1 : 0;
+            AM_EXPECT_EQ(2ULL, adopted);
+
+            AM_EXPECT(FramesUntil(
+                [&]()
+                {
+                    for (AmSize i = 1; i < decoders.size(); ++i)
+                        if (!startsAt(*decoders[i], 0.2) && !startsAt(*decoders[i], 0.4) && decoders[i]->closed.load() != 1)
+                            return false;
+
+                    return true;
+                },
+                150));
 
             RecordingState::Get().SetDelay(0);
             channel.Stop(0);

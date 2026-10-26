@@ -1042,8 +1042,8 @@ namespace SparkyStudios::Audio::Amplitude
         if (known != lay->instanceEntries.end())
             return true;
 
-        auto decoder = lay->snd->sound->OpenStreamDecoder();
-        if (decoder == nullptr)
+        auto opener = lay->snd->sound->MakeStreamDecoderOpener();
+        if (!opener)
             return false;
 
         // The ring is planned at the instance's own cursor, with the resampler's preroll before it. The reader counts the
@@ -1053,8 +1053,8 @@ namespace SparkyStudios::Audio::Amplitude
         const StreamPlan plan = PlanStream(lay->start, lay->end, lay->streamLoop, lay->streamWraps, target, lay->prerollFrames, preroll);
 
         const SoundFormat& format = lay->snd->format;
-        StreamSource* source = lay->streaming->Create(
-            std::move(decoder), plan, format.GetNumChannels(), format.GetSampleRate(), GetStreamCapacityFloor(format.GetSampleRate()));
+        StreamSource* source = lay->streaming->CreateDeferred(
+            std::move(opener), plan, format.GetNumChannels(), format.GetSampleRate(), GetStreamCapacityFloor(format.GetSampleRate()));
         lay->streaming->WakeUp();
 
         // Bound to the instance's own stream: never the voice's current one, which swaps and is retired.
@@ -1233,9 +1233,10 @@ namespace SparkyStudios::Audio::Amplitude
             layer->pendingStream = nullptr;
         }
 
-        // Every streamed seek gets its own decoder position: the ring of the stream being read must never be rewound.
-        auto decoder = layer->snd->sound->OpenStreamDecoder();
-        if (decoder == nullptr)
+        // Every streamed seek gets its own decoder position: the ring of the stream being read must never be rewound. The
+        // worker opens it, so a seek never reads the file on this thread.
+        auto opener = layer->snd->sound->MakeStreamDecoderOpener();
+        if (!opener)
             return false;
 
         // Wraps left: what the sound started with minus the seams the voice reported. The reports lag the voice, so this
@@ -1249,8 +1250,8 @@ namespace SparkyStudios::Audio::Amplitude
             PlanStream(layer->start, layer->end, layer->streamLoop, wraps, std::min(position, layer->end), layer->prerollFrames, preroll);
 
         const SoundFormat& format = layer->snd->format;
-        StreamSource* stream = streaming->Create(
-            std::move(decoder), plan, format.GetNumChannels(), format.GetSampleRate(), GetStreamCapacityFloor(format.GetSampleRate()));
+        StreamSource* stream = streaming->CreateDeferred(
+            std::move(opener), plan, format.GetNumChannels(), format.GetSampleRate(), GetStreamCapacityFloor(format.GetSampleRate()));
         streaming->WakeUp();
 
         layer->swapPosted = false;
@@ -1270,6 +1271,16 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (layer->pendingStream == nullptr || layer->swapPosted || layer->stopRequested)
             return;
+
+        // A stream that failed before it held a frame never opened its decoder: the seek is given up and the sound plays
+        // on where it is, rather than ending on an empty stream.
+        if (layer->pendingStream->GetRing().IsFailed() && layer->pendingStream->GetRing().GetWriteIndex() == 0)
+        {
+            amLogWarning("The seek of layer %u is ignored: its stream could not be opened.", GetLayerIndex(layer));
+            RetireHeldStream(layer, layer->pendingStream);
+            layer->pendingStream = nullptr;
+            return;
+        }
 
         PostVoiceCommand(
             layer->id, GetLayerIndex(layer), eVoiceCommandKind::Seek, 0.0, layer->pendingPosition, layer->pendingClock,

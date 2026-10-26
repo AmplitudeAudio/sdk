@@ -61,6 +61,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             _seekThreads.clear();
             _decoders.clear();
             _delayMs.store(0);
+            _failOpens.store(false);
         }
 
         /// From now on, decoders are recorded and the threads calling them noted.
@@ -78,6 +79,17 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         [[nodiscard]] AmInt32 GetDelay() const
         {
             return _delayMs.load();
+        }
+
+        /// From now on, opening a decoder fails (a file removed or locked after load).
+        void SetFailOpens(bool fail)
+        {
+            _failOpens.store(fail);
+        }
+
+        [[nodiscard]] bool FailsOpens() const
+        {
+            return _failOpens.load();
         }
 
         std::shared_ptr<RecordedDecoder> NewDecoder()
@@ -173,6 +185,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         std::set<AmUInt64> _seekThreads;
         std::vector<std::shared_ptr<RecordedDecoder>> _decoders;
         std::atomic<AmInt32> _delayMs{ 0 };
+        std::atomic<bool> _failOpens{ false };
     };
 
     /**
@@ -193,6 +206,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             bool Open(std::shared_ptr<File> file) override
             {
+                if (RecordingState::Get().FailsOpens())
+                    return false;
+
                 const bool opened = _inner->Open(std::move(file));
                 m_format = _inner->GetFormat();
                 if (_record != nullptr)
