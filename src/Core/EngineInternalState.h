@@ -30,6 +30,7 @@
 #include <Core/Playback/BusInternalState.h>
 #include <Core/Playback/ChannelInternalState.h>
 #include <Core/RoomInternalState.h>
+#include <Core/TagRegistry.h>
 
 #include <Ambisonics/BinauralDecodingFilters.h>
 #include <Ambisonics/SpeakerDecodingMatrix.h>
@@ -257,6 +258,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         EventMap event_map;
         EventIdMap event_id_map;
+
+        // The registry of sound tags.
+        TagRegistry tag_registry;
 
         EventInstanceVector running_events;
 
