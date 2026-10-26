@@ -336,6 +336,7 @@ namespace SparkyStudios::Audio::Amplitude
         _settings.m_pitch = RtpcValue(m_pitch);
         _settings.m_loop = _loop;
         _settings.m_loopCount = _loopCount;
+        _settings.m_tags = MakeTagSet(GetTags());
 
         return true;
     }

@@ -224,6 +224,7 @@ namespace SparkyStudios::Audio::Amplitude
                 RtpcValue::Init(settings.m_pitch, entry->pitch(), 1);
                 settings.m_loop = findIt->second->_loop;
                 settings.m_loopCount = findIt->second->_loopCount;
+                settings.m_tags = UnionTags({ findIt->second->GetTags(), GetTags() });
 
                 _sounds[i] = id;
                 _soundSettings[id] = settings;

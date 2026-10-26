@@ -24,6 +24,7 @@
 #include <Core/Asset.h>
 #include <IO/Resource.h>
 #include <Sound/SoundObject.h>
+#include <Sound/TagSet.h>
 
 #include "sound_definition_generated.h"
 
@@ -74,6 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         bool m_loop;
         AmUInt32 m_loopCount;
         const Attenuation* m_attenuation = nullptr;
+        TagSet m_tags; ///< Effective tags of the sound instance. Null means none.
     };
 
     class SoundImpl final
