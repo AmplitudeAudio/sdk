@@ -21,11 +21,26 @@
 
 #include <memory>
 
+/**
+ * @brief Enables per-allocation tracking (leak reports with file and line information).
+ *
+ * Tracking takes a global lock and allocates from the system heap on every allocation, so it is not real-time safe.
+ * It is enabled whenever the memory statistics are, unless `AM_NO_MEMORY_TRACKING` is defined. Builds which only
+ * need the statistics counters can define `AM_NO_MEMORY_TRACKING` to keep them lock-free.
+ */
+#if !defined(AM_NO_MEMORY_STATS) && !defined(AM_NO_MEMORY_TRACKING)
+#define AM_MEMORY_TRACKING
+#endif
+
 #if !defined(AM_NO_MEMORY_STATS)
+#include <array>
 #include <atomic>
+#include <unordered_map>
+#endif
+
+#if defined(AM_MEMORY_TRACKING)
 #include <mutex>
 #include <set>
-#include <unordered_map>
 #endif
 
 /**
@@ -348,7 +363,14 @@ namespace SparkyStudios::Audio::Amplitude
         eMemoryPoolKind pool;
 
         /**
-         * @brief The maximum total memory used by this pool.
+         * @brief The memory currently in use by this pool, in bytes.
+         */
+        std::atomic<AmSize> currentMemoryUsed{};
+
+        /**
+         * @brief The peak memory used by this pool, in bytes.
+         *
+         * This is the highest value reached by @ref currentMemoryUsed.
          */
         std::atomic<AmSize> maxMemoryUsed{};
 
@@ -757,6 +779,9 @@ namespace SparkyStudios::Audio::Amplitude
          * @tip This function is most useful after the engine has been deinitialized. Calling it before may just
          * report a lot of false positives (allocated memories which are still in use).
          *
+         * @note When allocation tracking is disabled (`AM_NO_MEMORY_TRACKING`), the report only lists the
+         * bytes still in use per pool, without file and line information.
+         *
          * @return A string containing a report for the detected memory leaks.
          */
         [[nodiscard]] AmString InspectMemoryLeaks() const;
@@ -769,12 +794,26 @@ namespace SparkyStudios::Audio::Amplitude
         std::unique_ptr<MemoryAllocator> _allocator;
 
 #if !defined(AM_NO_MEMORY_STATS)
+        void OnAllocate(eMemoryPoolKind pool, AmVoidPtr address, const char* file, AmUInt32 line);
+        void OnReallocate(
+            eMemoryPoolKind pool,
+            AmVoidPtr oldAddress,
+            AmSize oldSize,
+            AmVoidPtr address,
+            AmSize requestedSize,
+            const char* file,
+            AmUInt32 line);
+        void OnFree(eMemoryPoolKind pool, AmVoidPtr address, AmSize size);
+
+        std::array<MemoryPoolStats, eMemoryPoolKind_COUNT> _memPoolsStats;
+
+#if defined(AM_MEMORY_TRACKING)
         void RemoveAllocation(const Allocation& allocation);
         void AddAllocation(const Allocation& allocation);
 
         mutable std::mutex _allocationsMutex;
         std::set<Allocation> _memAllocations;
-        std::unordered_map<eMemoryPoolKind, MemoryPoolStats> _memPoolsStats;
+#endif
 #endif
     };
 

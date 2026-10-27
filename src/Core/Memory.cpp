@@ -20,16 +20,33 @@
 #include <xsimd/xsimd.hpp>
 #endif // defined(AM_SIMD_INTRINSICS)
 
+#include <mutex>
 #include <sstream>
+#include <unordered_map>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     static MemoryManager* gMemManager = nullptr;
 
 #if !defined(AM_NO_MEMORY_STATS)
+    /**
+     * Adds the given bytes to the pool usage, and raises the peak when a new high is reached.
+     */
+    static void RaiseUsage(MemoryPoolStats& stats, AmSize bytes)
+    {
+        const AmSize current = stats.currentMemoryUsed.fetch_add(bytes, std::memory_order_relaxed) + bytes;
+
+        AmSize peak = stats.maxMemoryUsed.load(std::memory_order_relaxed);
+        while (peak < current && !stats.maxMemoryUsed.compare_exchange_weak(peak, current, std::memory_order_relaxed))
+        {}
+    }
+#endif
+
+#if !defined(AM_NO_MEMORY_STATS)
     MemoryPoolStats::MemoryPoolStats(eMemoryPoolKind kind)
         : pool(kind)
     {
+        currentMemoryUsed.store(0);
         maxMemoryUsed.store(0);
         allocCount.store(0);
         freeCount.store(0);
@@ -38,6 +55,7 @@ namespace SparkyStudios::Audio::Amplitude
     MemoryPoolStats::MemoryPoolStats(const MemoryPoolStats& copy)
         : MemoryPoolStats(copy.pool)
     {
+        currentMemoryUsed.store(copy.currentMemoryUsed.load());
         maxMemoryUsed.store(copy.maxMemoryUsed.load());
         allocCount.store(copy.allocCount.load());
         freeCount.store(copy.freeCount.load());
@@ -46,6 +64,7 @@ namespace SparkyStudios::Audio::Amplitude
     MemoryPoolStats& MemoryPoolStats::operator=(const MemoryPoolStats& other)
     {
         pool = other.pool;
+        currentMemoryUsed.store(other.currentMemoryUsed.load());
         maxMemoryUsed.store(other.maxMemoryUsed.load());
         allocCount.store(other.allocCount.load());
         freeCount.store(other.freeCount.load());
@@ -114,16 +133,6 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!IsInitialized())
             gMemManager = new MemoryManager(std::move(allocator));
-
-#if !defined(AM_NO_MEMORY_STATS)
-        gMemManager->_memPoolsStats[eMemoryPoolKind_Amplimix] = MemoryPoolStats(eMemoryPoolKind_Amplimix);
-        gMemManager->_memPoolsStats[eMemoryPoolKind_Codec] = MemoryPoolStats(eMemoryPoolKind_Codec);
-        gMemManager->_memPoolsStats[eMemoryPoolKind_Default] = MemoryPoolStats(eMemoryPoolKind_Default);
-        gMemManager->_memPoolsStats[eMemoryPoolKind_Engine] = MemoryPoolStats(eMemoryPoolKind_Engine);
-        gMemManager->_memPoolsStats[eMemoryPoolKind_Filtering] = MemoryPoolStats(eMemoryPoolKind_Filtering);
-        gMemManager->_memPoolsStats[eMemoryPoolKind_IO] = MemoryPoolStats(eMemoryPoolKind_IO);
-        gMemManager->_memPoolsStats[eMemoryPoolKind_SoundData] = MemoryPoolStats(eMemoryPoolKind_SoundData);
-#endif
     }
 
     void MemoryManager::Deinitialize()
@@ -149,17 +158,24 @@ namespace SparkyStudios::Audio::Amplitude
     MemoryManager::MemoryManager(std::unique_ptr<MemoryAllocator> allocator)
         : _allocator(std::move(allocator))
 #if !defined(AM_NO_MEMORY_STATS)
-        , _memAllocations()
         , _memPoolsStats()
+#endif
+#if defined(AM_MEMORY_TRACKING)
+        , _memAllocations()
 #endif
     {
         if (_allocator == nullptr)
             _allocator = std::make_unique<DefaultMemoryAllocator>(4, 16 * 1024 * 1024);
+
+#if !defined(AM_NO_MEMORY_STATS)
+        for (AmUInt32 i = 0; i < eMemoryPoolKind_COUNT; ++i)
+            _memPoolsStats[i].pool = static_cast<eMemoryPoolKind>(i);
+#endif
     }
 
     MemoryManager::~MemoryManager()
     {
-#if !defined(AM_NO_MEMORY_STATS)
+#if defined(AM_MEMORY_TRACKING)
         // Clear the allocations set to prevent container leak
         _memAllocations.clear();
 #endif
@@ -168,6 +184,78 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
 #if !defined(AM_NO_MEMORY_STATS)
+    void MemoryManager::OnAllocate(
+        eMemoryPoolKind pool, AmVoidPtr address, [[maybe_unused]] const char* file, [[maybe_unused]] AmUInt32 line)
+    {
+        if (address == nullptr)
+            return;
+
+        const AmSize size = _allocator->SizeOf(pool, address);
+
+        MemoryPoolStats& stats = _memPoolsStats[pool];
+        RaiseUsage(stats, size);
+        stats.allocCount.fetch_add(1, std::memory_order_relaxed);
+
+#if defined(AM_MEMORY_TRACKING)
+        AddAllocation({ pool, address, size, file, line });
+#endif
+    }
+
+    void MemoryManager::OnReallocate(
+        eMemoryPoolKind pool,
+        AmVoidPtr oldAddress,
+        AmSize oldSize,
+        AmVoidPtr address,
+        AmSize requestedSize,
+        [[maybe_unused]] const char* file,
+        [[maybe_unused]] AmUInt32 line)
+    {
+        if (address == nullptr)
+        {
+            // A zero-sized request releases the block. Otherwise the request failed and the original block is still valid.
+            if (oldAddress != nullptr && requestedSize == 0)
+                OnFree(pool, oldAddress, oldSize);
+
+            return;
+        }
+
+        if (oldAddress == nullptr)
+        {
+            OnAllocate(pool, address, file, line);
+            return;
+        }
+
+        const AmSize newSize = _allocator->SizeOf(pool, address);
+
+        MemoryPoolStats& stats = _memPoolsStats[pool];
+        if (newSize >= oldSize)
+            RaiseUsage(stats, newSize - oldSize);
+        else
+            stats.currentMemoryUsed.fetch_sub(oldSize - newSize, std::memory_order_relaxed);
+
+#if defined(AM_MEMORY_TRACKING)
+        {
+            std::lock_guard<std::mutex> lock(_allocationsMutex);
+            if (const auto& it = _memAllocations.find({ pool, oldAddress }); it != _memAllocations.end())
+                _memAllocations.erase(it);
+            _memAllocations.insert({ pool, address, newSize, file, line });
+        }
+#endif
+    }
+
+    void MemoryManager::OnFree(eMemoryPoolKind pool, [[maybe_unused]] AmVoidPtr address, AmSize size)
+    {
+        MemoryPoolStats& stats = _memPoolsStats[pool];
+        stats.currentMemoryUsed.fetch_sub(size, std::memory_order_relaxed);
+        stats.freeCount.fetch_add(1, std::memory_order_relaxed);
+
+#if defined(AM_MEMORY_TRACKING)
+        RemoveAllocation({ pool, address });
+#endif
+    }
+#endif
+
+#if defined(AM_MEMORY_TRACKING)
     void MemoryManager::RemoveAllocation(const Allocation& allocation)
     {
         std::lock_guard<std::mutex> lock(_allocationsMutex);
@@ -187,9 +275,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmVoidPtr ptr = _allocator->Malloc(pool, size);
 
 #if !defined(AM_NO_MEMORY_STATS)
-        _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
-        _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
-        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
+        OnAllocate(pool, ptr, file, line);
 #endif
 
         return ptr;
@@ -200,9 +286,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmVoidPtr ptr = _allocator->Malign(pool, size, alignment);
 
 #if !defined(AM_NO_MEMORY_STATS)
-        _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
-        _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
-        AddAllocation({ pool, ptr, SizeOf(pool, ptr), file, line });
+        OnAllocate(pool, ptr, file, line);
 #endif
 
         return ptr;
@@ -210,21 +294,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmVoidPtr MemoryManager::Realloc(eMemoryPoolKind pool, AmVoidPtr address, AmSize size, const char* file, AmUInt32 line)
     {
+#if !defined(AM_NO_MEMORY_STATS)
+        const AmSize oldSize = _allocator->SizeOf(pool, address);
+#endif
+
         AmVoidPtr ptr = _allocator->Realloc(pool, address, size);
 
 #if !defined(AM_NO_MEMORY_STATS)
-        if (address == nullptr)
-        {
-            _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
-            _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(_allocationsMutex);
-            if (const auto& it = _memAllocations.find({ pool, address }); it != _memAllocations.end())
-                _memAllocations.erase(it);
-            _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
-        }
+        OnReallocate(pool, address, oldSize, ptr, size, file, line);
 #endif
 
         return ptr;
@@ -233,21 +310,14 @@ namespace SparkyStudios::Audio::Amplitude
     AmVoidPtr MemoryManager::Realign(
         eMemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment, const char* file, AmUInt32 line)
     {
+#if !defined(AM_NO_MEMORY_STATS)
+        const AmSize oldSize = _allocator->SizeOf(pool, address);
+#endif
+
         AmVoidPtr ptr = _allocator->Realign(pool, address, size, alignment);
 
 #if !defined(AM_NO_MEMORY_STATS)
-        if (address == nullptr)
-        {
-            _memPoolsStats[pool].maxMemoryUsed.fetch_add(size, std::memory_order_relaxed);
-            _memPoolsStats[pool].allocCount.fetch_add(1, std::memory_order_relaxed);
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(_allocationsMutex);
-            if (const auto& it = _memAllocations.find({ pool, address }); it != _memAllocations.end())
-                _memAllocations.erase(it);
-            _memAllocations.insert({ pool, ptr, SizeOf(pool, ptr), file, line });
-        }
+        OnReallocate(pool, address, oldSize, ptr, size, file, line);
 #endif
 
         return ptr;
@@ -255,11 +325,16 @@ namespace SparkyStudios::Audio::Amplitude
 
     void MemoryManager::Free(eMemoryPoolKind pool, AmVoidPtr address)
     {
+#if !defined(AM_NO_MEMORY_STATS)
+        // The usable size must be read before the block is released.
+        const AmSize size = _allocator->SizeOf(pool, address);
+#endif
+
         _allocator->Free(pool, address);
 
 #if !defined(AM_NO_MEMORY_STATS)
-        _memPoolsStats[pool].freeCount.fetch_add(1, std::memory_order_relaxed);
-        RemoveAllocation({ pool, address });
+        if (address != nullptr)
+            OnFree(pool, address, size);
 #endif
     }
 
@@ -271,21 +346,14 @@ namespace SparkyStudios::Audio::Amplitude
 #if !defined(AM_NO_MEMORY_STATS)
     AmSize MemoryManager::TotalReservedMemorySize(eMemoryPoolKind pool) const
     {
-        std::lock_guard<std::mutex> lock(_allocationsMutex);
-        AmSize total = 0;
-        for (const auto& allocation : _memAllocations)
-            if (allocation.pool == pool)
-                total += allocation.size;
-
-        return total;
+        return _memPoolsStats[pool].currentMemoryUsed.load(std::memory_order_relaxed);
     }
 
     AmSize MemoryManager::TotalReservedMemorySize() const
     {
-        std::lock_guard<std::mutex> lock(_allocationsMutex);
         AmSize total = 0;
-        for (const auto& allocation : _memAllocations)
-            total += allocation.size;
+        for (const auto& stats : _memPoolsStats)
+            total += stats.currentMemoryUsed.load(std::memory_order_relaxed);
 
         return total;
     }
@@ -311,12 +379,14 @@ namespace SparkyStudios::Audio::Amplitude
 
     AmString MemoryManager::InspectMemoryLeaks() const
     {
+        std::stringstream ss;
+
+#if defined(AM_MEMORY_TRACKING)
         std::lock_guard<std::mutex> lock(_allocationsMutex);
 
         if (_memAllocations.empty())
             return "No memory leaks detected";
 
-        std::stringstream ss;
         ss << "=== Memory leaks detected ===\n\n";
 
         for (auto&& allocation : _memAllocations)
@@ -327,6 +397,23 @@ namespace SparkyStudios::Audio::Amplitude
             ss << "  File: " << allocation.file << std::endl;
             ss << "  Line: " << allocation.line << std::endl << std::endl;
         }
+#else
+        // Without allocation tracking, only the outstanding byte counts per pool are known.
+        if (TotalReservedMemorySize() == 0)
+            return "No memory leaks detected";
+
+        ss << "=== Memory leaks detected ===\n\n";
+
+        for (const auto& stats : _memPoolsStats)
+        {
+            const AmSize used = stats.currentMemoryUsed.load(std::memory_order_relaxed);
+            if (used == 0)
+                continue;
+
+            ss << "Pool: " << GetMemoryPoolName(stats.pool) << std::endl;
+            ss << "  Size: " << used << " (allocation tracking is disabled, no per-allocation details)" << std::endl << std::endl;
+        }
+#endif
 
         return ss.str();
     }

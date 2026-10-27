@@ -90,6 +90,12 @@ option("build_tools")
   set_description("Build official CLI tools")
 option_end()
 
+option("memory_stats")
+  set_default(false)
+  set_showmenu(true)
+  set_description("Keep the lock-free memory statistics counters in release builds (per-allocation leak tracking stays debug-only)")
+option_end()
+
 option("unit_tests")
   add_deps("build_assets")
   add_deps("build_tools")
@@ -170,7 +176,13 @@ end
 
 -- Apply debug/release specific defines
 if is_mode("release") then
-  add_defines("AM_NO_MEMORY_STATS", "AM_NO_ASSERTS", { public = true })
+  add_defines("AM_NO_ASSERTS", { public = true })
+
+  if has_config("memory_stats") then
+    add_defines("AM_NO_MEMORY_TRACKING", { public = true })
+  else
+    add_defines("AM_NO_MEMORY_STATS", { public = true })
+  end
 end
 
 -- Thread support for UNIX platforms
