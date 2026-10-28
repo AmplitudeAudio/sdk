@@ -52,10 +52,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(leakReport.find("Engine") != AmString::npos);
             AM_EXPECT(leakReport.find("SoundData") != AmString::npos);
 
+            AM_EXPECT(leakReport.find("Size:") != AmString::npos);
+
+#if defined(AM_MEMORY_TRACKING)
             // Verify leak report contains file and line information
             AM_EXPECT(leakReport.find(__FILE__) != AmString::npos);
-            AM_EXPECT(leakReport.find("Size:") != AmString::npos);
             AM_EXPECT(leakReport.find("Address:") != AmString::npos);
+#endif
 
             // Test that freeing memory removes leaks from detection
             amMemory->Free(eMemoryPoolKind_Default, leakedPtr1);
@@ -119,7 +122,9 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AmString cleanReport = amMemory->InspectMemoryLeaks();
             AM_EXPECT(cleanReport == "No memory leaks detected");
 
-            // Test leak detection with zero-size allocations
+#if defined(AM_MEMORY_TRACKING)
+            // Test leak detection with zero-size allocations.
+            // These have no usable bytes, so only per-allocation tracking can see them.
             AmVoidPtr zeroPtr = amMemory->Malloc(eMemoryPoolKind_Default, 0, __FILE__, __LINE__);
             if (zeroPtr != nullptr) // Some allocators return null for zero-size allocations
             {
@@ -130,6 +135,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                 AmString postZeroReport = amMemory->InspectMemoryLeaks();
                 AM_EXPECT(postZeroReport == "No memory leaks detected");
             }
+#endif
 
 #else
             // Memory stats are disabled, InspectMemoryLeaks is not available
