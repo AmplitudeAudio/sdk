@@ -169,6 +169,8 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmReal32 GetInstanceGain(AmSize index) const override;
         [[nodiscard]] AmReal32 GetInstanceAttenuationGain(AmSize index) const override;
         [[nodiscard]] bool IsSharingPipelineAcrossInstances() const override;
+        [[nodiscard]] std::span<const AmTagID> GetTags() const override;
+        [[nodiscard]] bool HasTag(AmTagID tag) const override;
 
         /**
          * @brief Cached per-instance data for pipeline processing.

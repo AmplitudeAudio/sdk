@@ -87,6 +87,9 @@ table SoundDefinition {
   /// a virtual emitter around the sound's direction. 0 collapses the channels to the sound's direction; absent means
   /// the native width of the asset's layout (60 for stereo, 220 for 5.1). Ignored for mono assets.
   spread:RtpcCompatibleValue;
+
+  /// The tags of this sound, used to match it with sound selectors.
+  tags:[string];
 }
 
 root_type SoundDefinition;

@@ -24,6 +24,7 @@
 #include <Core/Asset.h>
 #include <IO/Resource.h>
 #include <Sound/SoundObject.h>
+#include <Sound/TagSet.h>
 
 #include "sound_definition_generated.h"
 
@@ -74,6 +75,7 @@ namespace SparkyStudios::Audio::Amplitude
         bool m_loop;
         AmUInt32 m_loopCount;
         const Attenuation* m_attenuation = nullptr;
+        TagSet m_tags; ///< Effective tags of the sound instance. Null means none.
     };
 
     class SoundImpl final
@@ -116,6 +118,17 @@ namespace SparkyStudios::Audio::Amplitude
          * @return SoundInstance* A sound instance which can be played.
          */
         [[nodiscard]] SoundInstance* CreateInstance(const CollectionImpl* collection);
+
+        /**
+         * @brief Create a new SoundInstance from this Sound, with the effective tags replaced.
+         *
+         * The SoundInstance created this way uses the settings of the Sound object, except for its tags.
+         *
+         * @param tags The effective tags of the instance.
+         *
+         * @return SoundInstance* A sound instance which can be played.
+         */
+        [[nodiscard]] SoundInstance* CreateInstance(const TagSet& tags);
 
         /**
          * @brief Returns the SoundChunk associated with this Sound
@@ -236,6 +249,22 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AM_INLINE eScope GetScope() const override
         {
             return SoundObjectImpl::GetScope();
+        }
+
+        /**
+         * @copydoc SoundObject::GetTags
+         */
+        [[nodiscard]] AM_INLINE std::span<const AmTagID> GetTags() const override
+        {
+            return SoundObjectImpl::GetTags();
+        }
+
+        /**
+         * @copydoc SoundObject::HasTag
+         */
+        [[nodiscard]] AM_INLINE bool HasTag(AmTagID tag) const override
+        {
+            return SoundObjectImpl::HasTag(tag);
         }
 
         /**

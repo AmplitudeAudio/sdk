@@ -109,6 +109,9 @@ table SwitchContainerDefinition {
 
   /// The list of child objects which should be played.
   entries:[SwitchContainerEntry];
+
+  /// The tags of this switch container, used to match it with sound selectors.
+  tags:[string];
 }
 
 root_type SwitchContainerDefinition;

@@ -19,6 +19,9 @@
 
 #include <SparkyStudios/Audio/Amplitude/Sound/SoundObject.h>
 
+#include <algorithm>
+#include <vector>
+
 #include <Sound/Attenuation.h>
 #include <Sound/Effect.h>
 
@@ -109,6 +112,22 @@ namespace SparkyStudios::Audio::Amplitude
             return m_scope;
         }
 
+        /**
+         * @copydoc SoundObject::GetTags
+         */
+        [[nodiscard]] AM_INLINE std::span<const AmTagID> GetTags() const override
+        {
+            return m_tags;
+        }
+
+        /**
+         * @copydoc SoundObject::HasTag
+         */
+        [[nodiscard]] AM_INLINE bool HasTag(AmTagID tag) const override
+        {
+            return std::ranges::binary_search(m_tags, tag);
+        }
+
     protected:
         // The bus this sound object will play on.
         std::shared_ptr<BusInternalState> m_bus;
@@ -122,6 +141,9 @@ namespace SparkyStudios::Audio::Amplitude
 
         eSpatialization m_spatialization;
         eScope m_scope;
+
+        // The tag ids of this object, sorted ascending.
+        std::vector<AmTagID> m_tags;
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

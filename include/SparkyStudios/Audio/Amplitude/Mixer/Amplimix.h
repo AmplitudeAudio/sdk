@@ -15,6 +15,8 @@
 #ifndef _AM_MIXER_AMPLIMIX_H
 #define _AM_MIXER_AMPLIMIX_H
 
+#include <span>
+
 #include <SparkyStudios/Audio/Amplitude/Core/AudioBuffer.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Common.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Device.h>
@@ -24,6 +26,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelInstance.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Tag.h>
 #include <SparkyStudios/Audio/Amplitude/Sound/Attenuation.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -425,6 +428,34 @@ namespace SparkyStudios::Audio::Amplitude
          */
         [[nodiscard]] virtual bool IsSharingPipelineAcrossInstances() const
         {
+            return false;
+        }
+
+        /**
+         * @brief Gets the effective tags of the sound playing in the layer.
+         *
+         * These are the tags of the sound, plus those of the collection or switch container it plays from, sorted
+         * ascending. The span is valid while the layer plays.
+         *
+         * @return The effective tags, or an empty span when the layer has no sound.
+         *
+         * @see CreateTagId
+         */
+        [[nodiscard]] virtual std::span<const AmTagID> GetTags() const
+        {
+            return {};
+        }
+
+        /**
+         * @brief Checks whether the sound playing in the layer carries a tag.
+         *
+         * @param[in] tag The tag ID, as returned by @c CreateTagId.
+         *
+         * @return @c true if the effective tags of the layer include @p tag, @c false otherwise or when the layer has no sound.
+         */
+        [[nodiscard]] virtual bool HasTag(AmTagID tag) const
+        {
+            AM_UNUSED(tag);
             return false;
         }
     };

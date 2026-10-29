@@ -1339,6 +1339,9 @@ namespace SparkyStudios::Audio::Amplitude
         _state->master_bus.reset();
         _state->buses.clear();
 
+        // Release the registered tags
+        _state->tag_registry.Clear();
+
         _state.reset();
         _audioDriver.reset();
 

@@ -15,6 +15,8 @@
 #pragma once
 
 #include <atomic>
+#include <mutex>
+#include <vector>
 
 #include "PlatformTestCase.h"
 #include "TestCase.h"
@@ -159,6 +161,93 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
+    /// What the tag probe saw on the layer it processed last. The audio thread writes it, the tests read it.
+    struct TagProbeRecord
+    {
+        std::mutex mutex;
+        bool seen = false;
+        std::vector<AmTagID> tags;
+        std::vector<AmTagID> queried; ///< The tags to ask the layer about with HasTag().
+        std::vector<bool> answers; ///< The HasTag() answer for each of @c queried.
+
+        static TagProbeRecord& Get()
+        {
+            static TagProbeRecord record;
+            return record;
+        }
+
+        void Clear(std::vector<AmTagID> query)
+        {
+            std::lock_guard lock(mutex);
+            seen = false;
+            tags.clear();
+            queried = std::move(query);
+            answers.clear();
+        }
+    };
+
+    /// Passes the buffer through and records the layer's tags into the @c TagProbeRecord.
+    class TagProbeNodeInstance final : public ProcessorNodeInstance
+    {
+    public:
+        const AudioBuffer* Process(const AudioBuffer* input) override
+        {
+            if (const AmplimixLayer* layer = GetLayer(); layer != nullptr)
+            {
+                TagProbeRecord& record = TagProbeRecord::Get();
+                std::lock_guard lock(record.mutex);
+                const auto tags = layer->GetTags();
+                record.tags.assign(tags.begin(), tags.end());
+                record.answers.clear();
+                for (const AmTagID tag : record.queried)
+                    record.answers.push_back(layer->HasTag(tag));
+                record.seen = true;
+            }
+
+            AudioBuffer::Copy(*input, 0, _output, 0, input->GetFrameCount());
+            return &_output;
+        }
+    };
+
+    /// A pass-through node that keeps every channel and records the tags of the layer it runs on.
+    class TagProbeNode final : public Node
+    {
+    public:
+        TagProbeNode()
+            : Node("TestTagProbe")
+        {}
+
+        [[nodiscard]] AM_INLINE std::shared_ptr<NodeInstance> CreateInstance() const override
+        {
+            return ampoolshared(eMemoryPoolKind_Amplimix, TagProbeNodeInstance);
+        }
+
+        [[nodiscard]] AM_INLINE bool CanConsume() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE bool CanProduce() const override
+        {
+            return true;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMaxInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE AmSize GetMinInputCount() const override
+        {
+            return 1;
+        }
+
+        [[nodiscard]] AM_INLINE eNodeChannelPolicy GetChannelPolicy() const override
+        {
+            return eNodeChannelPolicy_PerChannel;
+        }
+    };
+
     class EngineTestCase : public TestCase
     {
     public:
@@ -191,6 +280,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             _invalidConsumerNodePlugin = Engine::RegisterExtension<InvalidConsumerNode>();
             _monoProbeNodePlugin = Engine::RegisterExtension<MonoProbeNode>();
             _customProbeNodePlugin = Engine::RegisterExtension<CustomProbeNode>();
+            _tagProbeNodePlugin = Engine::RegisterExtension<TagProbeNode>();
 
             // Use platform-appropriate assets path
             _fileSystem->SetBasePath(GetPlatformAssetsBasePath());
@@ -253,6 +343,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             Engine::UnregisterExtension(_invalidConsumerNodePlugin);
             Engine::UnregisterExtension(_monoProbeNodePlugin);
             Engine::UnregisterExtension(_customProbeNodePlugin);
+            Engine::UnregisterExtension(_tagProbeNodePlugin);
 
             amEngine->DestroyInstance();
 
@@ -346,5 +437,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         std::shared_ptr<InvalidConsumerNode> _invalidConsumerNodePlugin = nullptr;
         std::shared_ptr<MonoProbeNode> _monoProbeNodePlugin = nullptr;
         std::shared_ptr<CustomProbeNode> _customProbeNodePlugin = nullptr;
+        std::shared_ptr<TagProbeNode> _tagProbeNodePlugin = nullptr;
     };
 } // namespace SparkyStudios::Audio::Amplitude::Tests

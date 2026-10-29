@@ -17,6 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/Engine.h>
+#include <Core/TagRegistry.h>
 #include <Mixer/SoundData.h>
 #include <Sound/Sound.h>
 
@@ -75,12 +76,23 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_spatialization = eSpatialization_None;
         m_scope = eScope_World;
+        m_tags.clear();
     }
 
     SoundInstance* SoundImpl::CreateInstance()
     {
         AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
         return ampoolnew(eMemoryPoolKind_Amplimix, SoundInstance, this, _settings, m_effect);
+    }
+
+    SoundInstance* SoundImpl::CreateInstance(const TagSet& tags)
+    {
+        AMPLITUDE_ASSERT(m_id != kAmInvalidObjectId);
+
+        SoundInstanceSettings settings = _settings;
+        settings.m_tags = tags;
+
+        return ampoolnew(eMemoryPoolKind_Amplimix, SoundInstance, this, settings, m_effect);
     }
 
     SoundInstance* SoundImpl::CreateInstance(const CollectionImpl* collection)
@@ -304,6 +316,9 @@ namespace SparkyStudios::Audio::Amplitude
         m_spatialization = static_cast<eSpatialization>(definition->spatialization());
         m_scope = static_cast<eScope>(definition->scope());
 
+        if (!LoadTags(definition->tags(), "sound", definition->name()->c_str(), state->tag_registry, m_tags))
+            return false;
+
         auto fs = amEngine->GetFileSystem();
 
         const SoundLoopConfig* loopConfig = definition->loop();
@@ -331,6 +346,7 @@ namespace SparkyStudios::Audio::Amplitude
         _settings.m_pitch = RtpcValue(m_pitch);
         _settings.m_loop = _loop;
         _settings.m_loopCount = _loopCount;
+        _settings.m_tags = MakeTagSet(GetTags());
 
         return true;
     }

@@ -17,6 +17,7 @@
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Core/EngineInternalState.h>
+#include <Core/TagRegistry.h>
 #include <Sound/Collection.h>
 #include <Sound/Schedulers/RandomScheduler.h>
 #include <Sound/Schedulers/SequenceScheduler.h>
@@ -49,6 +50,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         m_spatialization = eSpatialization_None;
         m_scope = eScope_World;
+        m_tags.clear();
     }
 
     Sound* CollectionImpl::SelectFromWorld(const std::unordered_set<AmSoundID>& toSkip) const
@@ -182,6 +184,9 @@ namespace SparkyStudios::Audio::Amplitude
         m_spatialization = static_cast<eSpatialization>(definition->spatialization());
         m_scope = static_cast<eScope>(definition->scope());
 
+        if (!LoadTags(definition->tags(), "collection", definition->name()->c_str(), state->tag_registry, m_tags))
+            return false;
+
         const auto* sounds = definition->sounds();
         const flatbuffers::uoffset_t sampleCount = sounds != nullptr ? sounds->size() : 0;
 
@@ -219,6 +224,7 @@ namespace SparkyStudios::Audio::Amplitude
                 RtpcValue::Init(settings.m_pitch, entry->pitch(), 1);
                 settings.m_loop = findIt->second->_loop;
                 settings.m_loopCount = findIt->second->_loopCount;
+                settings.m_tags = UnionTags({ findIt->second->GetTags(), GetTags() });
 
                 _sounds[i] = id;
                 _soundSettings[id] = settings;

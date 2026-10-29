@@ -22,6 +22,7 @@
 #include <Mixer/InstanceBlending.h>
 #include <Mixer/InstanceCursors.h>
 #include <Mixer/Pipeline.h>
+#include <Sound/TagSet.h>
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, (C), std::memory_order_release)
 #define AMPLIMIX_LOAD(A) std::atomic_load_explicit(A, std::memory_order_acquire)
@@ -1435,6 +1436,22 @@ namespace SparkyStudios::Audio::Amplitude
             return Bus(nullptr);
 
         return amEngine->FindBus(snd->sound->GetSettings().m_busID);
+    }
+
+    std::span<const AmTagID> AmplimixLayerImpl::GetTags() const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return {};
+
+        return TagSetSpan(snd->sound->GetSettings().m_tags);
+    }
+
+    bool AmplimixLayerImpl::HasTag(AmTagID tag) const
+    {
+        if (snd == nullptr || snd->sound == nullptr)
+            return false;
+
+        return TagSetContains(snd->sound->GetSettings().m_tags, tag);
     }
 
     SoundFormat AmplimixLayerImpl::GetSoundFormat() const
