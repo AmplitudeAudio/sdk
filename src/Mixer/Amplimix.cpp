@@ -509,6 +509,11 @@ namespace SparkyStudios::Audio::Amplitude
             voice->BindStream(stream);
 
             lay->streaming = streaming;
+            if (!lay->inStreamedLayers)
+            {
+                lay->inStreamedLayers = true;
+                _streamedLayers.push_back(GetLayerIndex(lay));
+            }
             lay->heldStreams.push_back(stream);
         }
 
@@ -1299,10 +1304,22 @@ namespace SparkyStudios::Audio::Amplitude
 
         streaming->CollectRetired();
 
-        for (auto& lay : _layers)
+        // Only the layers that stream: usually none or a few, out of every layer of the mixer.
+        for (auto it = _streamedLayers.begin(); it != _streamedLayers.end();)
         {
-            if (lay.streaming == nullptr || lay.slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay.releaseRequested ||
-                lay.stopRequested)
+            auto& lay = _layers[*it];
+
+            // A layer that does not stream any more (destroyed, or reused by an in-memory sound) leaves the list.
+            if (lay.streaming == nullptr)
+            {
+                lay.inStreamedLayers = false;
+                it = _streamedLayers.erase(it);
+                continue;
+            }
+
+            ++it;
+
+            if (lay.slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay.releaseRequested || lay.stopRequested)
                 continue;
 
             if (lay.activationPending && streaming->IsReady(lay.stream))
@@ -1886,6 +1903,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::lock_guard streamLock(_streamMutex);
 
         StreamDiagnostics diagnostics;
+        diagnostics.streamedLayers = static_cast<AmUInt32>(_streamedLayers.size());
         for (const auto& lay : _layers)
         {
             if (lay.streaming == nullptr || lay.slot.load(std::memory_order_acquire) != eLayerSlot::Live)

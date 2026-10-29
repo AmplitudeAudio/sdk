@@ -184,6 +184,11 @@ namespace SparkyStudios::Audio::Amplitude
         [[nodiscard]] AmUInt64 GetUnderrunCount() const;
 
         /**
+         * @brief Gets the number of passes the worker made. Any thread.
+         */
+        [[nodiscard]] AmUInt64 GetPassCount() const;
+
+        /**
          * @brief Wakes the worker up. Game thread.
          */
         void WakeUp();
@@ -229,6 +234,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<Entry> _sources; // guarded by _mutex
         std::vector<StreamSource*> _retireRequests; // guarded by _mutex
         std::vector<StreamSource*> _acknowledged; // guarded by _mutex
+        std::vector<StreamSource*> _freeing; // game thread only: the acknowledged sources being freed
 
         // Worker only.
         std::vector<Entry> _active;
@@ -236,6 +242,7 @@ namespace SparkyStudios::Audio::Amplitude
         AmInt64 _lastPassTicks = 0;
 
         std::atomic<AmUInt64> _underruns{ 0 };
+        std::atomic<AmUInt64> _passes{ 0 };
     };
 } // namespace SparkyStudios::Audio::Amplitude
 

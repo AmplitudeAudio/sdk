@@ -45,6 +45,7 @@ namespace SparkyStudios::Audio::Amplitude
         _sources.reserve(kInitialSources);
         _retireRequests.reserve(kInitialSources);
         _acknowledged.reserve(kInitialSources);
+        _freeing.reserve(kInitialSources);
         _active.reserve(kInitialSources);
         _candidates.reserve(kInitialSources);
     }
@@ -229,14 +230,19 @@ namespace SparkyStudios::Audio::Amplitude
 
     void StreamingThread::CollectRetired()
     {
-        std::vector<StreamSource*> freed;
+        // Swapped with a vector kept across calls: both keep their capacity, so neither thread reallocates in steady state.
         {
             std::lock_guard lock(_mutex);
-            freed.swap(_acknowledged);
+            if (_acknowledged.empty())
+                return;
+
+            _freeing.swap(_acknowledged);
         }
 
-        for (auto* source : freed)
+        for (auto* source : _freeing)
             Free(source);
+
+        _freeing.clear();
     }
 
     void StreamingThread::FillInline(StreamSource* source, AmUInt64 frames)
@@ -259,6 +265,11 @@ namespace SparkyStudios::Audio::Amplitude
     void StreamingThread::RecordUnderrun()
     {
         _underruns.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    AmUInt64 StreamingThread::GetPassCount() const
+    {
+        return _passes.load(std::memory_order_relaxed);
     }
 
     AmUInt64 StreamingThread::GetUnderrunCount() const
@@ -285,12 +296,18 @@ namespace SparkyStudios::Audio::Amplitude
             self->Pass();
 
             std::unique_lock lock(self->_mutex);
-            self->_wake.wait_for(
-                lock, std::chrono::milliseconds(kIdleWaitMs),
-                [self]()
-                {
-                    return !self->_running.load(std::memory_order_acquire) || self->_wakePending || !self->_retireRequests.empty();
-                });
+            const auto woken = [self]()
+            {
+                return !self->_running.load(std::memory_order_acquire) || self->_wakePending || !self->_retireRequests.empty();
+            };
+
+            // The readers drain the rings without signalling: poll while there are sources. Without any, sleep until
+            // Create(), Retire() or Stop() signals.
+            if (self->_sources.empty())
+                self->_wake.wait(lock, woken);
+            else
+                self->_wake.wait_for(lock, std::chrono::milliseconds(kIdleWaitMs), woken);
+
             self->_wakePending = false;
         }
     }
@@ -323,6 +340,8 @@ namespace SparkyStudios::Audio::Amplitude
 
     void StreamingThread::Pass()
     {
+        _passes.fetch_add(1, std::memory_order_relaxed);
+
         // 1. Acknowledge the retire requests and take a snapshot of the live sources. After this point the worker no
         // longer fills an acknowledged source, so the game thread may free it.
         {

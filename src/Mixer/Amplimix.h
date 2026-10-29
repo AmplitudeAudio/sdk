@@ -133,6 +133,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::atomic<bool> stopRequested{ false }; // a Stop or Release was posted: no more seeks are planned or posted
         std::atomic<bool> muted{ false }; // stopped before it was heard: the gain stays at zero
         bool underrunWarned = false;
+        bool inStreamedLayers = false; // listed in AmplimixImpl::_streamedLayers; guarded by _streamMutex
         // The voice reported a lost StreamDropped: streams are never retired because of it (they stay held until their own
         // Dropped or the layer is destroyed), and the swapPosted gate is lifted since the in-flight stream may be the one
         // whose drop was lost. Seeks then post fresh streams without waiting; the voice resolves them in order.
@@ -621,6 +622,7 @@ namespace SparkyStudios::Audio::Amplitude
             AmUInt32 pendingInstanceAttaches = 0; ///< instance streams waiting for their prefill
             AmUInt32 instanceStreams = 0; ///< instance streams attached or pending
             AmUInt32 retiringInstanceStreams = 0; ///< detached instance streams waiting for the audio thread to let go
+            AmUInt32 streamedLayers = 0; ///< layers UpdateStreams() visits
         };
 
         [[nodiscard]] StreamDiagnostics GetStreamDiagnosticsForTesting();
@@ -685,6 +687,7 @@ namespace SparkyStudios::Audio::Amplitude
         std::vector<VoiceCommand> _voiceOutbox; // game side only, guarded by _voiceOutboxMutex
         std::vector<AmUInt32> _pendingDestroys; // game thread only: released layers waiting for detach and unpin
         std::recursive_mutex _streamMutex; // guards the streamed-layer bookkeeping; game side only, never taken by the audio thread
+        std::vector<AmUInt32> _streamedLayers; // indices of the layers that stream; guarded by _streamMutex
         std::mutex _voiceOutboxMutex; // transport may be called from any game-side thread; never taken by the audio thread
         std::atomic<AmUInt64> _audioClock{ 0 };
         AmUInt64 _voiceBlockFrames = 0;
