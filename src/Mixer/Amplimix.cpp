@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <cmath>
+#include <optional>
 #include <thread>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
@@ -22,6 +25,7 @@
 #include <Mixer/InstanceBlending.h>
 #include <Mixer/InstanceCursors.h>
 #include <Mixer/Pipeline.h>
+#include <Mixer/Voice/VirtualCursor.h>
 #include <Sound/TagSet.h>
 
 #define AMPLIMIX_STORE(A, C) std::atomic_store_explicit(A, (C), std::memory_order_release)
@@ -78,6 +82,29 @@ namespace SparkyStudios::Audio::Amplitude
 
     // Audio thread: whether a mixer command may still act on the layer. A detached layer belongs to the game thread,
     // which destroys it; the audio thread never touches it again.
+    /// Frames of the stand-in ring a streamed voice is created over, until its planned stream is bound.
+    static constexpr AmUInt64 kPlaceholderRingFrames = 16;
+
+    /// Voice blocks of source audio a stream ring always holds: one block read at up to this play speed.
+    static constexpr AmUInt64 kStreamRingBlocks = 4;
+
+    /// Wraps a looping sound of @p loopCount total plays may make.
+    static AmUInt32 StreamWraps(bool loop, AmUInt32 loopCount)
+    {
+        return !loop ? 0 : loopCount == 0 ? SourceReader::kInfiniteWraps : loopCount - 1;
+    }
+
+    /// Forgets a stream the layer holds and retires it. Game thread.
+    static void RetireHeldStream(AmplimixLayerImpl* layer, StreamSource* stream)
+    {
+        const auto it = std::find(layer->heldStreams.begin(), layer->heldStreams.end(), stream);
+        if (it == layer->heldStreams.end())
+            return; // retired already: never twice
+
+        layer->heldStreams.erase(it);
+        layer->streaming->Retire(stream);
+    }
+
     static bool IsLiveForCommand(const AmplimixLayerImpl* layer, AmUInt32 id)
     {
         return layer->slot.load(std::memory_order_acquire) == eLayerSlot::Live && !layer->detached.load(std::memory_order_relaxed) &&
@@ -209,6 +236,17 @@ namespace SparkyStudios::Audio::Amplitude
         _voiceBlockFrames = channels > 0 ? AM_MAX(static_cast<AmUInt64>(_device.mOutputBufferSize) / channels, 1ULL) : 1ULL;
     }
 
+    AmUInt64 AmplimixImpl::GetStreamCapacityFloor(AmUInt32 sampleRate) const
+    {
+        const AmUInt32 outputRate = AMPLIMIX_LOAD_RELAXED(&_mixOutputSampleRate);
+        if (outputRate == 0)
+            return 0;
+
+        // Source frames one voice block reads at the nominal speed, rounded up.
+        const AmUInt64 blockSourceFrames = (_voiceBlockFrames * sampleRate + outputRate - 1) / outputRate;
+        return blockSourceFrames * kStreamRingBlocks;
+    }
+
     AmUInt64 AmplimixImpl::Mix(AudioBuffer** outBuffer, AmUInt64 frameCount)
     {
         // Anything logged while mixing is queued for the game thread: no lock, no allocation, no I/O here.
@@ -299,6 +337,9 @@ namespace SparkyStudios::Audio::Amplitude
         if (sound == nullptr || sound->length == 0)
             return 0;
 
+        // The stream bookkeeping of the layer is published below; keep other game-side threads out meanwhile.
+        std::lock_guard streamLock(_streamMutex);
+
         // define a layer id
         layer = layer == 0 ? ++_nextId : layer;
 
@@ -312,8 +353,32 @@ namespace SparkyStudios::Audio::Amplitude
 
         const AmUInt32 outputRate = AMPLIMIX_LOAD_RELAXED(&_mixOutputSampleRate);
 
+        StreamingThread* streaming = nullptr;
+        if (sound->stream)
+        {
+            streaming = _engineState != nullptr ? _engineState->streaming.get() : nullptr;
+            if (streaming == nullptr)
+            {
+                amLogError("Cannot start the streamed sound on layer %u: the streaming thread is not available.", layer);
+                return 0;
+            }
+        }
+
         VoiceSettings settings;
         settings.source = MakeVoiceSource(sound);
+
+        // The voice needs a stream to be created over, but the stream plan needs the voice's preroll: the voice starts
+        // over this empty, unregistered stand-in until the planned stream is bound below, before the voice is activated.
+        std::optional<StreamSource> placeholder;
+        if (streaming != nullptr)
+        {
+            AmUInt64 unused = 0;
+            const AmUInt16 channels = sound->format.GetNumChannels();
+            placeholder.emplace(
+                nullptr, PlanStream(0, sound->length, false, 0, 0, 0, unused), kPlaceholderRingFrames, channels, 1,
+                sound->format.GetSampleRate(), true);
+            settings.source.stream = &*placeholder;
+        }
         settings.regionStart = 0;
         settings.regionEnd = sound->length;
         settings.loop = options.loop;
@@ -364,6 +429,9 @@ namespace SparkyStudios::Audio::Amplitude
         lay->detached.store(false, std::memory_order_relaxed);
         lay->voiceState.store(voice->GetPublishedState(), std::memory_order_relaxed);
         lay->voicePosition.store(voice->GetPublishedPosition(), std::memory_order_relaxed);
+        lay->resumesCursor.store(false, std::memory_order_relaxed);
+        lay->muted = false;
+        lay->stopRequested = false;
         AMPLIMIX_STORE(&lay->gain, options.gain);
         AMPLIMIX_STORE(&lay->pitch, options.pitch);
         AMPLIMIX_STORE(&lay->userPlaySpeed, options.speed);
@@ -393,6 +461,75 @@ namespace SparkyStudios::Audio::Amplitude
             return 0;
         }
 
+        // Streamed sounds: take the decoder and plan the first stream. Nothing below this point can fail.
+        StreamSource* stream = nullptr;
+        if (streaming != nullptr)
+        {
+            auto decoder = sound->sound->TakeStreamDecoder();
+            if (decoder == nullptr)
+            {
+                amLogError("Cannot start the streamed sound on layer %u: it has no decoder.", layer);
+
+                lay->pipeline = nullptr;
+                lay->snd = nullptr;
+                lay->voice = nullptr;
+                ampooldelete(eMemoryPoolKind_Amplimix, Voice, voice);
+                return 0;
+            }
+
+            lay->streamLoop = options.loop;
+            lay->streamWraps = StreamWraps(options.loop, options.loopCount);
+            lay->prerollFrames = voice->GetPrerollFrames();
+
+            // A voice resuming a virtual cursor seeks to where the cursor stands at its start frame (Voice::StartPlaying), not
+            // to the frame it was anchored on: the ring is planned there, or the voice would start outside of it.
+            AmUInt64 startTarget = options.startPosition;
+            if (options.startPositionClock != kVoiceAsap && sound->length > 0)
+            {
+                const AmUInt64 now = GetAudioClock();
+                const AmUInt64 frame = options.startFrame != kVoiceAsap ? std::max(now, options.startFrame) : now;
+                const AmReal64 speed = settings.speed > 0.0 && std::isfinite(settings.speed) ? settings.speed : 1.0;
+
+                lay->resumeCursor.Anchor(
+                    options.startPosition, options.startPositionClock,
+                    static_cast<AmReal64>(sound->format.GetSampleRate()) * speed / static_cast<AmReal64>(outputRate), 0, sound->length,
+                    options.loop);
+                lay->resumesCursor.store(true, std::memory_order_relaxed);
+                startTarget = lay->resumeCursor.PositionAt(frame);
+            }
+
+            AmUInt64 preroll = 0;
+            const StreamPlan plan = PlanStream(
+                0, sound->length, options.loop, lay->streamWraps, std::min(startTarget, sound->length), lay->prerollFrames, preroll);
+
+            stream = streaming->Create(
+                std::move(decoder), plan, sound->format.GetNumChannels(), sound->format.GetSampleRate(),
+                GetStreamCapacityFloor(sound->format.GetSampleRate()));
+            streaming->WakeUp();
+            voice->BindStream(stream);
+
+            lay->streaming = streaming;
+            if (!lay->inStreamedLayers)
+            {
+                lay->inStreamedLayers = true;
+                _streamedLayers.push_back(GetLayerIndex(lay));
+            }
+            lay->heldStreams.push_back(stream);
+        }
+
+        lay->stream = stream;
+        lay->pendingStream = nullptr;
+        lay->pendingPosition = 0;
+        lay->pendingClock = kVoiceAsap;
+        lay->swapPosted = false;
+        lay->swapsPosted = lay->swapsAdopted = lay->swapsDropped = 0;
+        lay->hasQueuedSeek = false;
+        lay->activationPending = false;
+        lay->suppressBegin = false;
+        lay->underrunWarned = false;
+        lay->dropsLost = false;
+        lay->loopsSeen = 0;
+
         // The first mixed block snaps to the target gain; later changes ramp. These writes are published to the audio
         // thread by the release-store to lay->slot below.
         for (auto& processor : lay->_mixGain)
@@ -403,13 +540,11 @@ namespace SparkyStudios::Audio::Amplitude
 
         lay->slot.store(eLayerSlot::Live, std::memory_order_release);
 
-        PushCommand(
-            { [this, lay]() -> bool
-              {
-                  // Add to active layer list
-                  ActivateLayer(GetLayerIndex(lay));
-                  return true;
-              } });
+        // A streamed voice is activated once its first stream holds the prefill (UpdateStreams), so it never starts on silence.
+        if (stream == nullptr || streaming->IsReady(stream))
+            PushActivation(lay);
+        else
+            lay->activationPending = true;
 
         return layer;
     }
@@ -458,6 +593,10 @@ namespace SparkyStudios::Audio::Amplitude
 
         if (lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || id != lay->id)
             return false;
+
+        // A layer stopped before it was heard stays silent while it winds down.
+        if (lay->muted.load(std::memory_order_acquire))
+            return true;
 
         AMPLIMIX_STORE(&lay->gain, gain);
 
@@ -661,10 +800,59 @@ namespace SparkyStudios::Audio::Amplitude
     }
 
     void AmplimixImpl::PostVoiceCommand(
-        AmUInt32 id, AmUInt32 layer, eVoiceCommandKind kind, AmTime duration, AmUInt64 position, AmUInt64 frame)
+        AmUInt32 id,
+        AmUInt32 layer,
+        eVoiceCommandKind kind,
+        AmTime duration,
+        AmUInt64 position,
+        AmUInt64 frame,
+        StreamSource* stream)
     {
+        // A stop that reaches a streamed layer ends its seeks: the unposted pending stream is freed, the queued seek
+        // dropped, and nothing more is planned or posted. A swap already posted is left to the voice and its events.
+        if ((kind == eVoiceCommandKind::Stop || kind == eVoiceCommandKind::Release) && frame == kVoiceAsap)
+        {
+            std::lock_guard streamLock(_streamMutex);
+
+            auto* lay = GetLayer(layer);
+            if (lay->id == id && lay->streaming != nullptr && lay->slot.load(std::memory_order_acquire) == eLayerSlot::Live
+                && !lay->releaseRequested)
+            {
+                lay->stopRequested = true;
+                lay->hasQueuedSeek = false;
+
+                if (lay->pendingStream != nullptr && !lay->swapPosted)
+                {
+                    RetireHeldStream(lay, lay->pendingStream);
+                    lay->pendingStream = nullptr;
+                }
+
+                // Still waiting for its prefill: it is never heard. The voice is activated now, silent, and stops at once,
+                // so the layer finishes through the usual events (the channel never announces a beginning).
+                if (lay->activationPending.exchange(false))
+                {
+                    lay->suppressBegin = true;
+                    lay->muted = true;
+                    AMPLIMIX_STORE(&lay->gain, 0.0f);
+                    duration = 0.0;
+                    PushActivation(lay);
+                }
+            }
+        }
+
         std::lock_guard<std::mutex> lock(_voiceOutboxMutex);
-        _voiceOutbox.push_back(VoiceCommand{ layer, id, kind, frame, duration, position });
+        _voiceOutbox.push_back(VoiceCommand{ layer, id, kind, frame, duration, position, stream });
+    }
+
+    void AmplimixImpl::PushActivation(AmplimixLayerImpl* layer)
+    {
+        PushCommand(
+            { [this, layer]() -> bool
+              {
+                  // Add to active layer list
+                  ActivateLayer(GetLayerIndex(layer));
+                  return true;
+              } });
     }
 
     void AmplimixImpl::FlushVoiceCommands()
@@ -709,6 +897,12 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
 
         position = lay.voicePosition.load(std::memory_order_acquire);
+
+        // A streamed voice resuming a virtual cursor waits for its prefill before it renders: until it starts, it stands
+        // where the cursor does, or a demotion in that window would anchor the cursor back on the frame it resumed from.
+        if (lay.resumesCursor.load(std::memory_order_acquire) && lay.voiceState.load(std::memory_order_acquire) == eVoiceState::Scheduled)
+            position = lay.resumeCursor.PositionAt(GetAudioClock());
+
         return true;
     }
 
@@ -757,7 +951,11 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        layer->Destroy();
+        {
+            std::lock_guard streamLock(_streamMutex);
+            layer->Destroy();
+        }
+
         return true;
     }
 
@@ -784,12 +982,21 @@ namespace SparkyStudios::Audio::Amplitude
         ReleaseLayer(id, layer);
     }
 
-    bool AmplimixImpl::AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId)
+    bool AmplimixImpl::AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId, AmUInt64 cursor)
     {
         if (!PinLayer(id, layer))
             return false;
 
         auto* lay = GetLayer(layer);
+
+        // A streamed layer gives the instance a stream (and decoder) of its own.
+        if (lay->streaming != nullptr)
+        {
+            const bool attached = AttachStreamedInstance(lay, id, instanceId, cursor);
+            UnpinLayer(layer);
+            return attached;
+        }
+
         auto stream = ampoolshared(eMemoryPoolKind_Amplimix, VoiceStreamSlot);
         const bool ready = lay->voice != nullptr && lay->voice->InitializeSlot(*stream, lay->start);
         UnpinLayer(layer);
@@ -823,11 +1030,150 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    bool AmplimixImpl::AttachStreamedInstance(AmplimixLayerImpl* lay, AmUInt32 id, AmChannelInstanceID instanceId, AmUInt64 cursor)
+    {
+        std::lock_guard streamLock(_streamMutex);
+
+        if (lay->releaseRequested || lay->stopRequested || lay->voice == nullptr || lay->snd == nullptr || lay->snd->sound == nullptr)
+            return false;
+
+        // Recorded already (attached or waiting for its prefill): never a second decoder for the same instance.
+        const auto known = std::ranges::find(
+            lay->instanceEntries, instanceId,
+            [](const AmplimixLayerImpl::InstanceStreamEntry& entry)
+            {
+                return entry.instanceId;
+            });
+        if (known != lay->instanceEntries.end())
+            return true;
+
+        auto opener = lay->snd->sound->MakeStreamDecoderOpener();
+        if (!opener)
+            return false;
+
+        // The ring is planned at the instance's own cursor, with the resampler's preroll before it. The reader counts the
+        // wraps from its own start, so the plan holds all of them: an instance never seeks, it only wraps inside its ring.
+        const AmUInt64 target = lay->end > lay->start ? std::clamp(cursor, lay->start, lay->end - 1) : lay->start;
+        AmUInt64 preroll = 0;
+        const StreamPlan plan = PlanStream(lay->start, lay->end, lay->streamLoop, lay->streamWraps, target, lay->prerollFrames, preroll);
+
+        const SoundFormat& format = lay->snd->format;
+        StreamSource* source = lay->streaming->CreateDeferred(
+            std::move(opener), plan, format.GetNumChannels(), format.GetSampleRate(), GetStreamCapacityFloor(format.GetSampleRate()));
+        lay->streaming->WakeUp();
+
+        // Bound to the instance's own stream: never the voice's current one, which swaps and is retired.
+        auto slot = ampoolshared(eMemoryPoolKind_Amplimix, VoiceStreamSlot);
+        if (!lay->voice->InitializeSlot(*slot, target, source))
+        {
+            lay->streaming->Retire(source); // nothing else knows this source yet
+            return false;
+        }
+
+        lay->instanceSources.push_back(source);
+
+        AmplimixLayerImpl::PendingInstanceAttach attach;
+        attach.instanceId = instanceId;
+        attach.slot = std::move(slot);
+        attach.source = source;
+        attach.cursor = target;
+        attach.probe = std::make_shared<AmplimixLayerImpl::InstanceSlipProbe>();
+
+        AmplimixLayerImpl::InstanceStreamEntry entry;
+        entry.instanceId = instanceId;
+        entry.source = source;
+        entry.cursor = target;
+        entry.slot = attach.slot;
+        entry.probe = attach.probe;
+        lay->instanceEntries.push_back(std::move(entry));
+
+        if (lay->streaming->IsReady(source))
+            PushInstanceAttach(lay, id, attach);
+        else
+            lay->pendingAttaches.push_back(std::move(attach));
+
+        return true;
+    }
+
+    void AmplimixImpl::PushInstanceAttach(AmplimixLayerImpl* lay, AmUInt32 id, const AmplimixLayerImpl::PendingInstanceAttach& attach)
+    {
+        PushCommand(
+            { [lay, id, instanceId = attach.instanceId, slot = attach.slot, cursor = attach.cursor, probe = attach.probe]() -> bool
+              {
+                  if (!IsLiveForCommand(lay, id) || lay->instanceStreams == nullptr)
+                      return true;
+
+                  // The ring is planned at the cursor: seeking through the stream maps the reader there and primes the
+                  // resampler history from the ring's preroll. Nothing here allocates, locks or logs.
+                  slot->stream.Seek(slot->reader, cursor);
+
+                  const AmUInt64 actual = slot->reader.GetCursor();
+                  probe->actual.store(actual, std::memory_order_relaxed);
+                  probe->state.store(
+                      actual == cursor ? AmplimixLayerImpl::InstanceSlipProbe::kExact : AmplimixLayerImpl::InstanceSlipProbe::kSlipped,
+                      std::memory_order_release);
+
+                  // Discard the filter's group delay, so the instance lines up with the primary path.
+                  lay->voice->PrimeStream(*slot);
+
+                  AM_UNUSED(lay->instanceStreams->Attach(instanceId, slot));
+                  return true;
+              } });
+    }
+
     bool AmplimixImpl::DetachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId)
     {
-        auto* lay = GetLayer(layer);
-        if (lay->id != id || lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live)
+        if (!PinLayer(id, layer))
             return false;
+
+        auto* lay = GetLayer(layer);
+
+        if (lay->streaming != nullptr)
+        {
+            std::lock_guard streamLock(_streamMutex);
+
+            const auto entry = std::ranges::find(
+                lay->instanceEntries, instanceId,
+                [](const AmplimixLayerImpl::InstanceStreamEntry& e)
+                {
+                    return e.instanceId;
+                });
+
+            if (entry != lay->instanceEntries.end())
+            {
+                StreamSource* source = entry->source;
+                source->SetSuspended(true); // the worker stops refilling it
+
+                const auto pending = std::ranges::find(
+                    lay->pendingAttaches, instanceId,
+                    [](const AmplimixLayerImpl::PendingInstanceAttach& p)
+                    {
+                        return p.instanceId;
+                    });
+
+                if (pending != lay->pendingAttaches.end())
+                {
+                    // Still waiting for its prefill: the audio thread never heard of it, nothing reads it and there is no
+                    // detach to push. Its stream is retired now, once.
+                    lay->pendingAttaches.erase(pending);
+                    lay->instanceEntries.erase(entry);
+
+                    const auto owned = std::ranges::find(lay->instanceSources, source);
+                    if (owned != lay->instanceSources.end())
+                        lay->instanceSources.erase(owned);
+
+                    lay->streaming->Retire(source);
+                    UnpinLayer(layer);
+                    return true;
+                }
+
+                // The audio thread may read it until the detach below ran: it is retired once it let go of the slot.
+                lay->retiringInstances.push_back({ std::move(entry->slot), source });
+                lay->instanceEntries.erase(entry);
+            }
+        }
+
+        UnpinLayer(layer);
 
         PushCommand(
             { [lay, id, instanceId]() -> bool
@@ -840,8 +1186,270 @@ namespace SparkyStudios::Audio::Amplitude
         return true;
     }
 
+    bool AmplimixImpl::SeekVoice(AmUInt32 id, AmUInt32 layer, AmUInt64 position, AmUInt64 clock)
+    {
+        std::lock_guard streamLock(_streamMutex);
+
+        auto* lay = GetLayer(layer);
+
+        // A streamed layer that is not the caller's any more (the slot was reused) has nothing to seek.
+        if (lay->streaming != nullptr && lay->id != id)
+            return false;
+
+        // The explicit position wins over the virtual cursor the voice was resuming from.
+        lay->resumesCursor.store(false, std::memory_order_release);
+
+        // In-memory voices seek in place.
+        if (lay->streaming == nullptr)
+        {
+            PostVoiceCommand(id, layer, eVoiceCommandKind::Seek, 0.0, position, clock);
+            return true;
+        }
+
+        if (lay->slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay->releaseRequested || lay->stopRequested ||
+            lay->snd == nullptr)
+            return false;
+
+        return SeekStreamedLayer(lay, position, clock);
+    }
+
+    bool AmplimixImpl::SeekStreamedLayer(AmplimixLayerImpl* layer, AmUInt64 position, AmUInt64 clock)
+    {
+        if (layer->stopRequested)
+            return false;
+
+        // A swap is in flight: the newest seek waits for it. It never created a stream, so a superseded one costs nothing.
+        // After a lost drop the in-flight swap may never be reported: the gate is lifted and the voice resolves seeks in order.
+        if (layer->swapPosted && !layer->dropsLost)
+        {
+            layer->queuedPosition = position;
+            layer->queuedClock = clock;
+            layer->hasQueuedSeek = true;
+            return true;
+        }
+
+        StreamingThread* streaming = layer->streaming;
+
+        // A pending stream the audio thread never saw is superseded: nothing reads it, free it now. A posted one stays held
+        // until its own Dropped (or the layer's destroy): the voice may still read it.
+        if (layer->pendingStream != nullptr && !layer->swapPosted)
+        {
+            RetireHeldStream(layer, layer->pendingStream);
+            layer->pendingStream = nullptr;
+        }
+
+        // Every streamed seek gets its own decoder position: the ring of the stream being read must never be rewound. The
+        // worker opens it, so a seek never reads the file on this thread.
+        auto opener = layer->snd->sound->MakeStreamDecoderOpener();
+        if (!opener)
+            return false;
+
+        // Wraps left: what the sound started with minus the seams the voice reported. The reports lag the voice, so this
+        // may over-estimate; a longer plan only decodes more than the voice ends up reading.
+        AmUInt32 wraps = layer->streamWraps;
+        if (layer->streamLoop && wraps != SourceReader::kInfiniteWraps)
+            wraps = wraps > layer->loopsSeen ? wraps - layer->loopsSeen : 0;
+
+        AmUInt64 preroll = 0;
+        const StreamPlan plan =
+            PlanStream(layer->start, layer->end, layer->streamLoop, wraps, std::min(position, layer->end), layer->prerollFrames, preroll);
+
+        const SoundFormat& format = layer->snd->format;
+        StreamSource* stream = streaming->CreateDeferred(
+            std::move(opener), plan, format.GetNumChannels(), format.GetSampleRate(), GetStreamCapacityFloor(format.GetSampleRate()));
+        streaming->WakeUp();
+
+        layer->swapPosted = false;
+        layer->heldStreams.push_back(stream);
+        layer->pendingStream = stream;
+        layer->pendingPosition = position;
+        layer->pendingClock = clock;
+
+        // Synchronous (offline) streams are ready at once: the seek lands exactly when it was requested.
+        if (streaming->IsReady(stream))
+            PostStreamSeek(layer);
+
+        return true;
+    }
+
+    void AmplimixImpl::PostStreamSeek(AmplimixLayerImpl* layer)
+    {
+        if (layer->pendingStream == nullptr || layer->swapPosted || layer->stopRequested)
+            return;
+
+        // A stream that failed before it held a frame never opened its decoder: the seek is given up and the sound plays
+        // on where it is, rather than ending on an empty stream.
+        if (layer->pendingStream->GetRing().IsFailed() && layer->pendingStream->GetRing().GetWriteIndex() == 0)
+        {
+            amLogWarning("The seek of layer %u is ignored: its stream could not be opened.", GetLayerIndex(layer));
+            RetireHeldStream(layer, layer->pendingStream);
+            layer->pendingStream = nullptr;
+            return;
+        }
+
+        PostVoiceCommand(
+            layer->id, GetLayerIndex(layer), eVoiceCommandKind::Seek, 0.0, layer->pendingPosition, layer->pendingClock,
+            layer->pendingStream);
+        layer->swapPosted = true;
+        ++layer->swapsPosted;
+    }
+
+    void AmplimixImpl::UpdateStreams()
+    {
+        StreamingThread* streaming = _engineState != nullptr ? _engineState->streaming.get() : nullptr;
+        if (streaming == nullptr)
+            return;
+
+        std::lock_guard streamLock(_streamMutex);
+
+        streaming->CollectRetired();
+
+        // Only the layers that stream: usually none or a few, out of every layer of the mixer.
+        for (auto it = _streamedLayers.begin(); it != _streamedLayers.end();)
+        {
+            auto& lay = _layers[*it];
+
+            // A layer that does not stream any more (destroyed, or reused by an in-memory sound) leaves the list.
+            if (lay.streaming == nullptr)
+            {
+                lay.inStreamedLayers = false;
+                it = _streamedLayers.erase(it);
+                continue;
+            }
+
+            ++it;
+
+            if (lay.slot.load(std::memory_order_acquire) != eLayerSlot::Live || lay.releaseRequested || lay.stopRequested)
+                continue;
+
+            if (lay.activationPending && streaming->IsReady(lay.stream))
+            {
+                lay.activationPending = false;
+                PushActivation(&lay);
+            }
+
+            if (lay.pendingStream != nullptr && !lay.swapPosted && streaming->IsReady(lay.pendingStream))
+                PostStreamSeek(&lay);
+
+            // Instances whose stream holds its prefill attach now.
+            for (auto it = lay.pendingAttaches.begin(); it != lay.pendingAttaches.end();)
+            {
+                if (!streaming->IsReady(it->source))
+                {
+                    ++it;
+                    continue;
+                }
+
+                PushInstanceAttach(&lay, lay.id, *it);
+                it = lay.pendingAttaches.erase(it);
+            }
+
+            // Detached instance streams the audio thread let go of are retired (a retired source is never read again).
+            for (auto it = lay.retiringInstances.begin(); it != lay.retiringInstances.end();)
+            {
+                if (it->slot.use_count() != 1)
+                {
+                    ++it;
+                    continue;
+                }
+
+                std::atomic_thread_fence(std::memory_order_acquire);
+
+                const auto owned = std::ranges::find(lay.instanceSources, it->source);
+                if (owned != lay.instanceSources.end())
+                    lay.instanceSources.erase(owned);
+
+                streaming->Retire(it->source);
+                it = lay.retiringInstances.erase(it);
+            }
+
+            // A reader that landed elsewhere than its planned cursor is reported once, here: never on the audio thread.
+            for (auto& entry : lay.instanceEntries)
+            {
+                if (entry.slipReported || entry.probe->state.load(std::memory_order_acquire) != AmplimixLayerImpl::InstanceSlipProbe::kSlipped)
+                    continue;
+
+                entry.slipReported = true;
+                amLogDebug(
+                    "Instance %llu of layer %u started at source frame %llu instead of %llu: its stream did not hold the frame.",
+                    static_cast<unsigned long long>(entry.instanceId), GetLayerIndex(&lay),
+                    static_cast<unsigned long long>(entry.probe->actual.load(std::memory_order_relaxed)),
+                    static_cast<unsigned long long>(entry.cursor));
+            }
+        }
+    }
+
+    void AmplimixImpl::HandleStreamSwapped(AmplimixLayerImpl* layer, const StreamSource* stream)
+    {
+        // Informational: the voice reads @p stream now. Nothing is retired here: the previous stream is reported by
+        // StreamDropped.
+        if (stream == nullptr || stream == layer->stream)
+            return;
+
+        // Only streams this layer created are tracked (a stale event of a destroyed layer's slot is ignored).
+        if (std::find(layer->heldStreams.begin(), layer->heldStreams.end(), stream) == layer->heldStreams.end())
+            return;
+
+        layer->stream = const_cast<StreamSource*>(stream);
+
+        // A stream adopted that is not the current pending one belongs to a seek whose drop was lost (see dropsLost).
+        if (stream != layer->pendingStream)
+            return;
+
+        layer->pendingStream = nullptr;
+        layer->swapPosted = false;
+        ++layer->swapsAdopted;
+
+        RunQueuedSeek(layer);
+    }
+
+    void AmplimixImpl::HandleStreamDropped(AmplimixLayerImpl* layer, StreamSource* stream)
+    {
+        if (stream == nullptr)
+        {
+            // A drop was lost: retire nothing because of it, the layer keeps its streams until it is destroyed.
+            layer->dropsLost = true;
+            return;
+        }
+
+        if (std::find(layer->heldStreams.begin(), layer->heldStreams.end(), stream) == layer->heldStreams.end())
+            return; // not ours any more: retired already
+
+        if (stream == layer->stream)
+        {
+            // The voice cannot drop its current stream in a correct run: keep it (the layer retires it at destroy).
+            amLogWarning("The voice of layer %u dropped the stream it was reading.", GetLayerIndex(layer));
+            return;
+        }
+
+        const bool wasPending = stream == layer->pendingStream;
+        RetireHeldStream(layer, stream);
+
+        if (wasPending)
+        {
+            // The in-flight seek ended without a swap: the voice is free for the next one.
+            layer->pendingStream = nullptr;
+            if (layer->swapPosted)
+                ++layer->swapsDropped;
+            layer->swapPosted = false;
+            RunQueuedSeek(layer);
+        }
+    }
+
+    void AmplimixImpl::RunQueuedSeek(AmplimixLayerImpl* layer)
+    {
+        if (!layer->hasQueuedSeek || layer->releaseRequested || layer->stopRequested)
+            return;
+
+        layer->hasQueuedSeek = false;
+        SeekStreamedLayer(layer, layer->queuedPosition, layer->queuedClock);
+    }
+
     void AmplimixImpl::DispatchVoiceEvents()
     {
+        // Streams the voices dropped are freed, and the ones that are ready start or swap.
+        UpdateStreams();
+
         // Layers the audio thread detached since the last frame are destroyed here, on the game thread.
         DestroyDetachedLayers();
 
@@ -856,6 +1464,44 @@ namespace SparkyStudios::Audio::Amplitude
             amLogError("Voice on layer %u failed to render and was stopped.", event.layer);
 
         AmplimixLayerImpl* layer = GetLayer(event.layer);
+
+        // Stream events work on bookkeeping the layer keeps until it is destroyed, so they apply to a released layer too:
+        // a dropped stream is retired at once, and the rest is retired with the layer.
+        if (layer->id == event.id && layer->slot.load(std::memory_order_acquire) == eLayerSlot::Live &&
+            layer->streaming != nullptr)
+        {
+            switch (event.kind)
+            {
+            case eVoiceEventKind::StreamDropped:
+                {
+                    std::lock_guard streamLock(_streamMutex);
+                    HandleStreamDropped(layer, const_cast<StreamSource*>(event.stream));
+                    return;
+                }
+
+            case eVoiceEventKind::StreamSwapped:
+                {
+                    std::lock_guard streamLock(_streamMutex);
+                    HandleStreamSwapped(layer, event.stream);
+                    return;
+                }
+
+            case eVoiceEventKind::Underrun:
+                layer->streaming->RecordUnderrun();
+
+                if (!layer->underrunWarned && !layer->releaseRequested && !layer->suppressBegin && layer->snd != nullptr && layer->snd->sound != nullptr)
+                {
+                    layer->underrunWarned = true;
+                    amLogWarning(
+                        "Stream underrun on '%s': the streaming thread could not keep up. Consider a larger streaming buffer.",
+                        layer->snd->sound->GetSound()->GetName().c_str());
+                }
+                return;
+
+            default:
+                break;
+            }
+        }
 
         // A layer whose release was requested is destroyed on the game thread at the next sweep: never read its sound.
         if (layer->id != event.id || layer->slot.load(std::memory_order_acquire) != eLayerSlot::Live || layer->releaseRequested ||
@@ -877,17 +1523,26 @@ namespace SparkyStudios::Audio::Amplitude
                 if (requested != kVoiceAsap && event.frame > requested)
                     amLogDebug("Scheduled start landed %llu frames late.", static_cast<unsigned long long>(event.frame - requested));
 
-                channelState->Trigger(eChannelEvent_Begin);
+                // Set when a stop reached the layer before it was activated.
+                if (!layer->suppressBegin.load(std::memory_order_acquire))
+                    channelState->Trigger(eChannelEvent_Begin);
             }
             break;
 
         case eVoiceEventKind::Looped:
+            layer->loopsSeen += event.count;
             for (AmUInt32 i = 0; i < event.count; ++i)
             {
                 IncrementSoundLoopCount(sound);
                 if (owned)
                     channelState->Trigger(eChannelEvent_Loop);
             }
+            break;
+
+        case eVoiceEventKind::Underrun:
+        case eVoiceEventKind::StreamSwapped:
+        case eVoiceEventKind::StreamDropped:
+            // Handled above, for streamed layers only.
             break;
 
         case eVoiceEventKind::FadedOut:
@@ -1242,6 +1897,31 @@ namespace SparkyStudios::Audio::Amplitude
     {
         _isMixing.store(inProgress, std::memory_order_release);
     }
+
+    AmplimixImpl::StreamDiagnostics AmplimixImpl::GetStreamDiagnosticsForTesting()
+    {
+        std::lock_guard streamLock(_streamMutex);
+
+        StreamDiagnostics diagnostics;
+        diagnostics.streamedLayers = static_cast<AmUInt32>(_streamedLayers.size());
+        for (const auto& lay : _layers)
+        {
+            if (lay.streaming == nullptr || lay.slot.load(std::memory_order_acquire) != eLayerSlot::Live)
+                continue;
+
+            diagnostics.swapPosted |= lay.swapPosted;
+            diagnostics.hasPending |= lay.pendingStream != nullptr;
+            diagnostics.hasQueuedSeek |= lay.hasQueuedSeek;
+            diagnostics.swapsPosted += lay.swapsPosted;
+            diagnostics.swapsAdopted += lay.swapsAdopted;
+            diagnostics.swapsDropped += lay.swapsDropped;
+            diagnostics.pendingInstanceAttaches += static_cast<AmUInt32>(lay.pendingAttaches.size());
+            diagnostics.instanceStreams += static_cast<AmUInt32>(lay.instanceEntries.size());
+            diagnostics.retiringInstanceStreams += static_cast<AmUInt32>(lay.retiringInstances.size());
+        }
+
+        return diagnostics;
+    }
 #endif
 
     AmplimixLayerImpl::~AmplimixLayerImpl()
@@ -1258,6 +1938,31 @@ namespace SparkyStudios::Audio::Amplitude
             ampooldelete(eMemoryPoolKind_Amplimix, Voice, voice);
             voice = nullptr;
         }
+
+        // The audio thread no longer reads the layer: every stream it still holds is retired, exactly once. The streaming
+        // thread outlives the layers (it is stopped before the mixer deinitializes, and frees at once when stopped).
+        if (streaming != nullptr)
+        {
+            for (StreamSource* source : heldStreams)
+                streaming->Retire(source);
+
+            for (StreamSource* source : instanceSources)
+                streaming->Retire(source);
+        }
+
+        heldStreams.clear();
+        instanceSources.clear();
+        pendingAttaches.clear();
+        instanceEntries.clear();
+        retiringInstances.clear();
+        streaming = nullptr;
+        stream = nullptr;
+        pendingStream = nullptr;
+        swapPosted = false;
+        swapsPosted = swapsAdopted = swapsDropped = 0;
+        hasQueuedSeek = false;
+        activationPending = false;
+        stopRequested = false;
 
         pipeline = nullptr;
         instancePipelines = nullptr;

@@ -38,6 +38,7 @@
 #include <HRTF/HRIRSphere.h>
 #include <Mixer/Amplimix.h>
 #include <Mixer/Pipeline.h>
+#include <Mixer/Streaming/StreamingThread.h>
 #include <Sound/Attenuation.h>
 #include <Sound/Collection.h>
 #include <Sound/Effect.h>
@@ -133,6 +134,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         explicit EngineInternalState()
             : mixer(1.0f)
+            , streaming(nullptr)
             , buses_source()
             , buses()
             , master_bus(nullptr)
@@ -197,6 +199,9 @@ namespace SparkyStudios::Audio::Amplitude
         {}
 
         AmplimixImpl mixer;
+
+        // Decodes streamed sounds ahead of their readers. Declared after the mixer so it is destroyed before it.
+        AmUniquePtr<StreamingThread, eMemoryPoolKind_Engine> streaming;
 
         // Hold the audio buses definition file contents.
         AmString buses_source;

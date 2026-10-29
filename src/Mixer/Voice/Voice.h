@@ -79,11 +79,26 @@ namespace SparkyStudios::Audio::Amplitude
         static constexpr AmSize kMaxSegments = 2 * kMaxPendingCommands + 8;
 
         bool Initialize(const VoiceSettings& settings);
-        bool InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position) const;
+
+        /**
+         * @brief Initializes a slot over the voice's settings (game thread).
+         *
+         * @param slot The slot to initialize.
+         * @param position The first source frame, for an in-memory source (a streamed source is positioned by the caller
+         * once its ring holds frames).
+         * @param stream For a streamed source: the stream the slot's reader is bound to, when it must not read the voice's
+         * own current stream (an instance slot owns its stream). Null binds the voice's current stream.
+         */
+        bool InitializeSlot(VoiceStreamSlot& slot, AmUInt64 position, StreamSource* stream = nullptr) const;
 
         /**
          * @brief Queues a command, ordered by frame. Commands are never dropped: when full, the latest-stamped pending
-         * command is evicted to make room and @c GetEvictedCommandCount() counts it.
+         * command is evicted to make room and @c GetEvictedCommandCount() counts it. An evicted Seek that carried a
+         * stream reports it with a @c StreamDropped event (unless the voice is reading that stream).
+         *
+         * A streamed voice must always be given a stream with a Seek (even a seek to the current region): a stream-less
+         * seek would remap the cursor on the ring the voice is already reading, which may be released. Debug builds
+         * assert on a stream-less Seek aimed at a streamed voice.
          */
         void Enqueue(const VoiceCommand& command);
 
@@ -206,6 +221,28 @@ namespace SparkyStudios::Audio::Amplitude
          */
         void PrimeStream(VoiceStreamSlot& slot);
 
+        /**
+         * @brief Binds both slots to @p stream and makes it the voice's current stream. Game thread, before the voice is
+         * activated. After activation streams only change through Seek commands, which must carry the stream.
+         */
+        void BindStream(StreamSource* stream);
+
+        /**
+         * @brief Gets the stream the primary slot reads now. Audio thread only: it changes when a seek swaps streams.
+         */
+        [[nodiscard]] StreamSource* GetCurrentStream() const
+        {
+            return _current;
+        }
+
+        /**
+         * @brief Gets the history frames the primary resampler reads ahead of an output: the preroll a stream plan needs.
+         */
+        [[nodiscard]] AmUInt64 GetPrerollFrames() const
+        {
+            return _slots[_primary].stream.GetPrerollFrames();
+        }
+
         VoiceStreamSlot& GetPrimarySlot()
         {
             return _slots[_primary];
@@ -223,6 +260,7 @@ namespace SparkyStudios::Audio::Amplitude
         {
             AmUInt64 offset;
             AmUInt64 position;
+            StreamSource* stream = nullptr;
         };
 
         [[nodiscard]] static AmUInt64 SortKey(const VoiceCommand& command);
@@ -236,11 +274,21 @@ namespace SparkyStudios::Audio::Amplitude
         void ApplyCommandsAt(AmUInt64 frame);
         void Apply(const VoiceCommand& command, AmUInt64 frame);
         void StartPlaying(AmUInt64 frame);
+        [[nodiscard]] AmUInt64 GetStartPositionAt(AmUInt64 frame) const;
+        [[nodiscard]] AmUInt64 GetReportedPosition(const VoiceStreamSlot& slot, AmUInt64 frame) const;
         void BeginFade(AmReal32 target, AmTime duration, AmUInt64 frame, eVoiceFadeTarget fadeTarget);
         void FinishFade(AmUInt64 frame);
         void Finish(AmUInt64 frame);
-        void Post(eVoiceEventKind kind, AmUInt64 frame, eVoiceFadeTarget target = eVoiceFadeTarget::None, AmUInt32 count = 1);
-        void ArmSeek(AmUInt64 position, AmUInt64 offset);
+        void Post(
+            eVoiceEventKind kind, AmUInt64 frame, eVoiceFadeTarget target = eVoiceFadeTarget::None, AmUInt32 count = 1,
+            const StreamSource* stream = nullptr);
+        void PostStreamSwapped(AmUInt64 frame);
+        void PostStreamDropped(const StreamSource* stream, AmUInt64 frame);
+        void RetireStream(const StreamSource* stream);
+        void FlushRetired(AmUInt64 frame);
+        void CancelCrossfade(AmUInt64 frame);
+        void BindDirect(StreamSource* stream, AmUInt64 position, AmUInt64 frame);
+        void ArmSeek(AmUInt64 position, AmUInt64 offset, StreamSource* stream);
         ResampleStream::PullReport Prime(VoiceStreamSlot& slot);
         void MergeIncomingReport(const ResampleStream::PullReport& report);
         void RenderPlayRange(AudioBuffer& source, AmUInt64 begin, AmUInt64 end);
@@ -271,6 +319,13 @@ namespace SparkyStudios::Audio::Amplitude
         eVoiceFadeTarget _fadeTarget = eVoiceFadeTarget::None;
         bool _positionPending = false;
         bool _primePending = false;
+        bool _seekOnStart = false; ///< A streamed voice seeks to its start position in StartPlaying().
+        StreamSource* _current = nullptr;  ///< The stream the primary slot reads: what StreamSwapped reports.
+        StreamSource* _incoming = nullptr; ///< A distinct stream bound to the incoming slot of a crossfade in flight, else null.
+        /// Streams that stopped being read during the operation in progress. FlushRetired() reports each once, minus the
+        /// streams the voice still reads or is adopting.
+        std::array<const StreamSource*, 2 * kMaxPendingCommands + 4> _retired{};
+        AmSize _retiredCount = 0;
         bool _audible = false;
         bool _sourceDone = false;
         AmUInt64 _crossfadeFrames = 1;
