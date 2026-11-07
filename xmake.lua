@@ -526,6 +526,15 @@ if has_config("unit_tests") then
           raise("No test binaries found.")
         end
 
+        -- The shared runner executes the SDK code from the shared library, not from its own binary.
+        local shared_sdk = project.target("Amplitude::Shared")
+        if shared_sdk then
+          local targetfile = shared_sdk:targetfile()
+          if targetfile and os.isfile(targetfile) then
+            table.insert(test_binaries, targetfile)
+          end
+        end
+
         -- Generate lcov format report
         print("Generating lcov coverage report...")
         local export_args = { }
