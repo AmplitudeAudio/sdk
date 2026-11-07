@@ -67,19 +67,36 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         void RunWithSpeed(AmReal32 initialSpeed, AmUInt64 settleFrames, AmReal32 laterSpeed)
         {
             AmplimixImpl& mixer = amEngine->GetState()->mixer;
-            const AmSize previousCap = mixer.GetMaxInstancePipelines();
+
+            // Restores the cap on every exit, including the early returns below.
+            struct PipelineCapGuard
+            {
+                AmplimixImpl& mixer;
+                const AmSize previousCap;
+
+                ~PipelineCapGuard()
+                {
+                    mixer.SetMaxInstancePipelines(previousCap);
+                }
+            } capGuard{ mixer, mixer.GetMaxInstancePipelines() };
+
             mixer.SetMaxInstancePipelines(1);
 
-            SoundHandle sound = amEngine->GetSoundHandle("test_sound_01");
+            // A looping sound: a one-shot can reach its end before the pause on a slow runner, leaving a dead channel.
+            SoundHandle sound = amEngine->GetSoundHandle("test_sound_07");
             Channel channel = amEngine->Play(sound);
             amEngine->WaitUntilFrames(2);
             AM_EXPECT(channel.Valid());
+            if (!channel.Valid())
+                return;
 
             channel.EnableInstancing(eChannelInstanceMode_Separate);
             RealChannel& realChannel = channel.GetState()->GetRealChannel();
             realChannel.SetSpeed(initialSpeed);
             amEngine->WaitUntilFrames(settleFrames);
             AM_EXPECT(channel.Playing());
+            if (!channel.Playing())
+                return;
 
             channel.Pause();
             AM_EXPECT(WaitUntil(
@@ -90,7 +107,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             ChannelInstance a = channel.AddInstance({ 10.0f, 0.0f, 0.0f });
             ChannelInstance b = channel.AddInstance({ -10.0f, 0.0f, 0.0f });
-            AM_EXPECT(WaitUntil([&]() { return MixerPipelineCount(channel) == 1; }));
+            AM_EXPECT(a.Valid() && b.Valid());
+            if (!a.Valid() || !b.Valid())
+                return;
+
+            const bool pipelinesReady = WaitUntil([&]() { return MixerPipelineCount(channel) == 1; });
+            AM_EXPECT(pipelinesReady);
+            if (!pipelinesReady)
+                return;
 
             channel.Resume();
 
@@ -134,7 +158,6 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             channel.Stop(0.0);
             amEngine->WaitUntilFrames(2);
-            mixer.SetMaxInstancePipelines(previousCap);
         }
     };
 
