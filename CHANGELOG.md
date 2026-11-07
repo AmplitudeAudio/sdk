@@ -7,6 +7,19 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 
 ### Changed
 
+- **New plugin entry point (an ABI break for every plugin).** A plugin now defines one `PluginDescriptor` (name,
+  version, metadata, `Register` and `Unregister`) and exposes it with `AM_DEFINE_PLUGIN`. The engine reads it from the
+  single `AmGetPluginDescriptor` export instead of probing `RegisterPlugin`, `UnregisterPlugin`, `PluginName`,
+  `PluginVersion` and the other exports by name, which are no longer read. The descriptor records the
+  `AM_PLUGIN_ABI_VERSION` it was built with; a plugin built with another version is refused before the engine calls
+  into it. `Register` and `Unregister` receive a `PluginHost` (engine, memory manager, frame callbacks).
+  - Frame hooks are registered through `PluginHost::RegisterFrameCallback` (`ePluginFrameStage_BeforeUpdate`,
+    `ePluginFrameStage_AfterUpdate`) instead of the `PluginBeforeUpdate` / `PluginUpdate` exports, and are removed
+    with their plugin.
+  - Plugin names must be unique; a second plugin with the same name is refused.
+  - `AM_PLUGINS_UNSUPPORTED` is now `AM_DYNAMIC_PLUGINS_UNSUPPORTED`: on iOS and Android only the shared-library
+    loader is disabled.
+
 - **Centred sounds are 3 dB louder (re-level existing mixes).** Panning is constant power everywhere: a centred mono
   sound now reaches each side at -3.01 dB instead of -6.02 dB, and a stereo asset played without spatialization plays
   at unity on its own channels instead of being folded to mono and centred. Sounds keep their channels until the
@@ -71,6 +84,15 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
 
 ### Added
 
+- **Statically linked plugins, on every platform.** Build a plugin with `AM_BUILDSYSTEM_STATIC_PLUGIN` and the same
+  `AM_DEFINE_PLUGIN` registers it at static initialization; the game writes `AM_STATIC_LINK_PLUGIN(Name)` once and
+  calls `Engine::RegisterStaticPlugins()` before `Initialize()`. This is the only way to use plugins on iOS and Android.
+  `Engine::RegisterPlugin(const PluginDescriptor*)` registers a descriptor directly, and `Engine::IsPluginRegistered`
+  checks for one by name.
+
+- `amplitude_tests_shared`: a desktop runner for the tests that load plugins from shared libraries (`*__shared.cpp`),
+  which no runner built before.
+
 - **Sound tags (new virtuals; an ABI break for binaries that call `Sound`, `Collection` or `SwitchContainer`).**
   Sound, collection and switch container definitions take a `tags` list of strings; an empty tag string fails the load
   of the asset that carries it. `CreateTagId` hashes a tag name to an `AmTagID` (the engine refuses to load assets whose
@@ -92,6 +114,9 @@ All notable changes to the Amplitude Audio SDK are recorded here. The format fol
   entity when the game tracks rooms, the room it is in otherwise).
 
 ### Fixed
+
+- `Engine::LoadPlugin` no longer lets `dylib` exceptions escape when a library cannot be opened or misses its entry
+  point, and no longer leaks the library when loading fails.
 
 - Source and listener directivity pointed to the right (+X) instead of forward (+Y): a directional source was
   loudest towards its right and silent towards its left, and a directional listener favoured sounds on its right. The
