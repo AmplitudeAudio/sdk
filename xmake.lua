@@ -206,14 +206,15 @@ if is_plat("android") then
   add_cxflags("-fPIC", { force = true })
 end
 
--- Plugins disabled on iOS/Android due to:
+-- Plugins cannot be loaded from shared libraries on iOS/Android due to:
 -- 1. App Store dynamic code loading restrictions
 -- 2. Platform limitations on dlopen/dlsym
+-- They are linked statically there instead (see AM_DEFINE_PLUGIN and Engine::RegisterStaticPlugins()).
 if not is_plat("iphoneos") and not is_plat("android") then
   add_requires("dylib ^3.0.1")
   add_packages("dylib")
 else
-  add_defines("AM_PLUGINS_UNSUPPORTED")
+  add_defines("AM_DYNAMIC_PLUGINS_UNSUPPORTED")
 end
 
 -- Use the release CRT, even in Debug builds; This allows compatibility with engine integrations.
