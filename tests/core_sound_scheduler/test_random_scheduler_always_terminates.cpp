@@ -48,9 +48,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             std::future<void> done = promise->get_future();
 
             std::thread(
-                [promise, work = std::move(work)]
+                [promise, work = std::move(work)]() mutable
                 {
                     work();
+                    // Drop the captures before signalling: once the test thread wakes it may tear down the memory
+                    // manager, so nothing they own may be freed from this thread afterwards.
+                    work = nullptr;
                     promise->set_value();
                 })
                 .detach();

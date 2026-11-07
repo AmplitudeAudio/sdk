@@ -40,9 +40,14 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             auto promise = std::make_shared<std::promise<AmUInt64>>();
             auto future = promise->get_future();
             std::thread(
-                [source, promise]()
+                [owned = source, promise]() mutable
                 {
-                    promise->set_value(source->Fill(1000));
+                    const AmUInt64 written = owned->Fill(1000);
+                    // Release this thread's reference before signalling: if it were the last one, the StreamSource
+                    // would be destroyed here after the test returned, freeing its buffers once TearDown has already
+                    // deinitialized the memory manager.
+                    owned.reset();
+                    promise->set_value(written);
                 })
                 .detach();
 
