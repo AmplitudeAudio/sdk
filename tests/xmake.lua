@@ -53,5 +53,27 @@ else
         add_files("test_plugins/without_update_hooks.cpp")
     target_end()
 
+    -- A plugin built for another plugin ABI version.
+    target("test_plugin_bad_abi")
+        set_kind("shared")
+        set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
+        add_defines("AM_BUILDSYSTEM_BUILDING_PLUGIN")
+
+        add_deps("Amplitude::Shared")
+
+        add_files("test_plugins/bad_abi.cpp")
+    target_end()
+
+    -- A shared library that doesn't export a plugin descriptor.
+    target("test_plugin_no_entry")
+        set_kind("shared")
+        set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
+        add_defines("AM_BUILDSYSTEM_BUILDING_PLUGIN")
+
+        add_deps("Amplitude::Shared")
+
+        add_files("test_plugins/no_entry.cpp")
+    target_end()
+
     includes("runners/desktop/xmake.lua")
 end

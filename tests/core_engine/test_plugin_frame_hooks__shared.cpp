@@ -109,7 +109,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             InitializeConfig(AM_OS_STRING("tests.config.amconfig"));
             AM_EXPECT(amEngine->IsInitialized());
 
-            // Loading a plugin while the engine runs is refused, so the frame hooks never change under a running frame.
+            // Loading a plugin while the engine runs is refused, so the frame callbacks never change under a running frame.
             AM_EXPECT(Engine::LoadPlugin(AM_OS_STRING("test_plugin")) == nullptr);
         }
     };

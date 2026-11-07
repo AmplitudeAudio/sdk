@@ -111,3 +111,22 @@ target("amplitude_tests")
         return false, err
     end)
 target_end()
+
+-- Desktop runner for the tests that load plugins from shared libraries (`*__shared.cpp`). It links the shared SDK, like the
+-- plugins it loads, and sits next to them so the engine finds them in the executable directory.
+target("amplitude_tests_shared")
+    set_kind("binary")
+    set_default(false)
+    set_group("test_runner")
+    set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
+    set_rundir("$(builddir)")
+
+    add_deps("common_test_shared", "test_plugin", "test_plugin_no_hooks", "test_plugin_bad_abi", "test_plugin_no_entry")
+
+    add_files("$(projectdir)/tests/**/*__shared.cpp")
+
+    -- Runner main
+    add_files("main.cpp")
+
+    add_tests("all", { runargs = { "-v" }, run_timeout = 120000 })
+target_end()

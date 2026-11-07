@@ -16,48 +16,27 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-extern "C" {
-
-AM_API_PLUGIN const char* PluginName()
+// A plugin that registers no frame callback.
+namespace
 {
-    return "Test Plugin";
-}
+    bool Register(const PluginHost*)
+    {
+        return true;
+    }
 
-AM_API_PLUGIN const char* PluginVersion()
-{
-    return "1.0.0";
-}
+    bool Unregister(const PluginHost*)
+    {
+        return true;
+    }
 
-AM_API_PLUGIN const char* PluginDescription()
-{
-    return "Test plugin for Amplitude.";
-}
+    const PluginDescriptor kDescriptor = {
+        .abiVersion = AM_PLUGIN_ABI_VERSION,
+        .structSize = sizeof(PluginDescriptor),
+        .name = "Test Plugin Without Frame Callbacks",
+        .version = "1.0.0",
+        .Register = Register,
+        .Unregister = Unregister,
+    };
+} // namespace
 
-AM_API_PLUGIN const char* PluginAuthor()
-{
-    return "Sparky Studios";
-}
-
-AM_API_PLUGIN const char* PluginCopyright()
-{
-    return "Copyright (c) 2025-present Sparky Studios. All rights Reserved.";
-}
-
-AM_API_PLUGIN const char* PluginLicense()
-{
-    return "Apache License, Version 2.0";
-}
-
-AM_API_PLUGIN bool RegisterPlugin(Engine* engine, MemoryManager* memoryManager)
-{
-    amLogSuccess("Test plugin registered successfully");
-    return true;
-}
-
-AM_API_PLUGIN bool UnregisterPlugin()
-{
-    amLogSuccess("Test plugin unregistered successfully");
-    return true;
-}
-
-} // extern "C"
+AM_DEFINE_PLUGIN(TestPluginNoHooks, kDescriptor)
