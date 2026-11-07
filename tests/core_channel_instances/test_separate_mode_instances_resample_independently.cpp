@@ -36,7 +36,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             const RealChannel& realChannel = channel.GetState()->GetRealChannel();
             const AmplimixImpl& mixer = amEngine->GetState()->mixer;
 
-            for (const AmUInt32 layerId : realChannel.GetMixerLayerIds())
+            // A channel without layers has ended: it must not count as paused.
+            const auto& layerIds = realChannel.GetMixerLayerIds();
+            if (layerIds.empty())
+                return false;
+
+            for (const AmUInt32 layerId : layerIds)
                 if (mixer.GetVoiceState(realChannel.GetID(), layerId) != eVoiceState::Paused)
                     return false;
 
@@ -44,16 +49,19 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     } // namespace
 
-    // test_sound_01 is 44.1 kHz and the test device runs at 48 kHz, so every instance goes through the resampler.
+    // test_sound_07 (test_sound_01.wav, looped) is 44.1 kHz and the test device runs at 48 kHz, so every instance goes
+    // through the resampler. It loops so a slow runner cannot reach its end before the test pauses it.
     AM_TEST_CASE(EngineTestCase, core_channel_instances, separate_mode_instances_resample_independently)
     {
     public:
         void Run() override
         {
-            SoundHandle sound = amEngine->GetSoundHandle("test_sound_01");
+            SoundHandle sound = amEngine->GetSoundHandle("test_sound_07");
             Channel channel = amEngine->Play(sound);
             amEngine->WaitUntilFrames(2);
             AM_EXPECT(channel.Valid());
+            if (!channel.Valid())
+                return;
 
             channel.EnableInstancing(eChannelInstanceMode_Separate);
 
@@ -68,10 +76,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             ChannelInstance a = channel.AddInstance({ 10.0f, 0.0f, 0.0f });
             ChannelInstance b = channel.AddInstance({ -10.0f, 0.0f, 0.0f });
+            AM_EXPECT(a.Valid() && b.Valid());
+            if (!a.Valid() || !b.Valid())
+                return;
 
             const RealChannel& realChannel = channel.GetState()->GetRealChannel();
             const AmplimixImpl& mixer = amEngine->GetState()->mixer;
-            AM_EXPECT(WaitUntil(
+            const bool pipelinesReady = WaitUntil(
                 [&]()
                 {
                     AmSize count = 0;
@@ -79,7 +90,10 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                         count += mixer.GetInstancePipelineCount(realChannel.GetID(), layerId);
 
                     return count == 2;
-                }));
+                });
+            AM_EXPECT(pipelinesReady);
+            if (!pipelinesReady)
+                return;
 
             channel.Resume();
 

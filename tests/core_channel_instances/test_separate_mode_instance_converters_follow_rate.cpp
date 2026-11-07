@@ -48,7 +48,12 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             const RealChannel& realChannel = channel.GetState()->GetRealChannel();
             const AmplimixImpl& mixer = amEngine->GetState()->mixer;
 
-            for (const AmUInt32 layerId : realChannel.GetMixerLayerIds())
+            // A channel without layers has ended: it must not count as paused.
+            const auto& layerIds = realChannel.GetMixerLayerIds();
+            if (layerIds.empty())
+                return false;
+
+            for (const AmUInt32 layerId : layerIds)
                 if (mixer.GetVoiceState(realChannel.GetID(), layerId) != eVoiceState::Paused)
                     return false;
 

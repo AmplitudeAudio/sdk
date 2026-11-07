@@ -22,6 +22,7 @@
 #include <Mixer/Streaming/StreamingThread.h>
 
 #include "ComponentTestCase.h"
+#include "SlowCountingDecoder.h"
 #include "StreamTestDecoder.h"
 #include "TestRegistry.h"
 
@@ -29,60 +30,6 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace SparkyStudios::Audio::Amplitude::Tests
 {
-    namespace
-    {
-        /// Counts Close() calls and the moment of the first one.
-        class CountingDecoder final : public Codec::Decoder
-        {
-        public:
-            CountingDecoder(std::atomic<int>& closeCount, std::atomic<bool>& stopReturned, std::atomic<bool>& closedBeforeStop)
-                : Decoder(nullptr)
-                , _closeCount(closeCount)
-                , _stopReturned(stopReturned)
-                , _closedBeforeStop(closedBeforeStop)
-            {
-                m_format.SetAll(48000, 2, 32, 48000 * 10, 2 * sizeof(AmReal32), eAudioSampleFormat_Float32);
-            }
-
-            bool Open(std::shared_ptr<File>) override
-            {
-                return true;
-            }
-
-            bool Close() override
-            {
-                if (!_stopReturned.load())
-                    _closedBeforeStop.store(true);
-                _closeCount.fetch_add(1);
-                return true;
-            }
-
-            AmUInt64 Load(AudioBuffer*) override
-            {
-                return 0;
-            }
-
-            AmUInt64 Stream(AudioBuffer* out, AmUInt64 bufferOffset, AmUInt64, AmUInt64 length) override
-            {
-                Thread::Sleep(200);
-                for (AmUInt16 c = 0; c < 2; ++c)
-                    for (AmUInt64 i = 0; i < length; ++i)
-                        (*out)[c][bufferOffset + i] = 0.0f;
-                return length;
-            }
-
-            bool Seek(AmUInt64) override
-            {
-                return true;
-            }
-
-        private:
-            std::atomic<int>& _closeCount;
-            std::atomic<bool>& _stopReturned;
-            std::atomic<bool>& _closedBeforeStop;
-        };
-    } // namespace
-
     AM_TEST_CASE(ComponentTestCase, mixer_streaming, streaming_thread_retire_racing_stop_closes_once)
     {
     public:
@@ -95,14 +42,22 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             StreamingThread thread({ 100.0, 20.0, false, 256 });
             thread.Start();
 
-            auto decoder = std::make_shared<CountingDecoder>(closeCount, stopReturned, closedBeforeStop);
+            auto decoder = std::make_shared<SlowCountingDecoder>(closeCount, stopReturned, closedBeforeStop);
             StreamPlan plan;
             plan.regionStart = 0;
             plan.regionEnd = 48000 * 10;
 
             // The worker is already running here, so the first fill happens on the worker, inside the slow Stream() call.
             StreamSource* source = thread.Create(decoder, plan, 2, 48000);
-            Thread::Sleep(20); // the worker is inside the 200 ms Stream() call
+            // Without the worker inside the slow read, the race below is not exercised and the test would pass
+            // vacuously: fail instead.
+            const bool inStream = decoder->WaitUntilInStream();
+            AM_EXPECT(inStream);
+            if (!inStream)
+            {
+                thread.Stop();
+                return;
+            }
 
             auto stopped = std::async(
                 std::launch::async,
