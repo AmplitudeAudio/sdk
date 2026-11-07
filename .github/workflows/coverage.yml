@@ -105,28 +105,47 @@ jobs:
           xcrun simctl spawn "$SIMULATOR_UDID" defaults write com.amplitudeaudiosdk.tests AMPLITUDE_AUTORUN -bool true
           xcrun simctl spawn "$SIMULATOR_UDID" defaults write com.amplitudeaudiosdk.tests AMPLITUDE_EXIT_ON_COMPLETE -bool true
 
+          LOG=ios_test_output.log
+
+          # Reads a summary value ("Total" or "Failed") logged as "[AmplitudeTests] <key>: <n>". Lines start with a
+          # timestamp, so the number is matched after the key instead of read from a fixed column.
+          summary_value() {
+            sed -nE "s/.*\[AmplitudeTests\] $1: +([0-9]+).*/\1/p" "$LOG" 2>/dev/null | tail -1
+          }
+
           # Launch and capture output (the app will exit when tests complete)
-          xcrun simctl launch --console-pty "$SIMULATOR_UDID" com.amplitudeaudiosdk.tests --autorun --exit-on-complete 2>&1 | tee ios_test_output.log &
+          xcrun simctl launch --console-pty "$SIMULATOR_UDID" com.amplitudeaudiosdk.tests --autorun --exit-on-complete 2>&1 | tee "$LOG" &
           APP_PID=$!
 
-          # Wait for tests to complete (timeout after 60 minutes)
+          # Wait for the summary, for the app to exit, or for the output to stall (a hung test).
           TIMEOUT=3600
+          STALL_TIMEOUT=300
           ELAPSED=0
-          TEST_COMPLETE=false
+          STALLED=0
+          LAST_SIZE=0
 
-          while [ $ELAPSED -lt $TIMEOUT ]; do
-            # Check if app has exited or if we see the summary
-            if ! kill -0 $APP_PID 2>/dev/null; then
+          while [ "$ELAPSED" -lt "$TIMEOUT" ]; do
+            if ! kill -0 "$APP_PID" 2>/dev/null; then
               echo "App has exited"
-              TEST_COMPLETE=true
               break
             fi
 
-            if grep -q "TEST SUMMARY" ios_test_output.log 2>/dev/null; then
+            # The summary is logged line by line: wait for its last line, not its header.
+            if [ -n "$(summary_value Failed)" ]; then
               echo "Tests completed!"
-              TEST_COMPLETE=true
-              sleep 2  # Give it a moment to finish logging
               break
+            fi
+
+            SIZE=$(wc -c < "$LOG" 2>/dev/null || echo 0)
+            if [ "$SIZE" -eq "$LAST_SIZE" ]; then
+              STALLED=$((STALLED + 5))
+              if [ "$STALLED" -ge "$STALL_TIMEOUT" ]; then
+                echo "No test output for $STALL_TIMEOUT seconds, the last test is likely hung."
+                break
+              fi
+            else
+              STALLED=0
+              LAST_SIZE=$SIZE
             fi
 
             sleep 5
@@ -134,38 +153,50 @@ jobs:
             echo "Waiting for tests... ($ELAPSED seconds)"
           done
 
-          # Kill the app if still running
-          kill $APP_PID 2>/dev/null || true
+          if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+            echo "Timed out after $TIMEOUT seconds."
+          fi
+
+          # The app exits on its own after the summary: give it a moment, then stop it.
+          for _ in $(seq 1 30); do
+            kill -0 "$APP_PID" 2>/dev/null || break
+            sleep 1
+          done
+          kill "$APP_PID" 2>/dev/null || true
 
           # Display results
           echo ""
           echo "=== Test Output ==="
-          cat ios_test_output.log || true
+          cat "$LOG" || true
           echo "==================="
           echo ""
 
           # Parse results
-          if grep -q "Failed: 0" ios_test_output.log && grep -q "Total:" ios_test_output.log; then
-            TOTAL=$(grep "Total:" ios_test_output.log | tail -1 | awk '{print $2}')
-            if [ "$TOTAL" != "0" ]; then
-              echo "All tests passed!"
-              echo "status=success" >> $GITHUB_OUTPUT
-              exit 0
-            fi
+          TOTAL=$(summary_value Total)
+          FAILED=$(summary_value Failed)
+
+          if [ -z "$TOTAL" ] || [ -z "$FAILED" ]; then
+            echo "No test summary: the app crashed, hung or was stopped."
+            echo "Last test progress: $(grep -E '(Running|PASSED|FAILED): ' "$LOG" | tail -1)"
+            echo "status=unknown" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
 
-          if grep -q "Failed:" ios_test_output.log; then
-            FAILED=$(grep "Failed:" ios_test_output.log | tail -1 | awk '{print $2}')
-            if [ "$FAILED" != "0" ]; then
-              echo "Some tests failed!"
-              echo "status=failure" >> $GITHUB_OUTPUT
-              exit 1
-            fi
+          if [ "$FAILED" != "0" ]; then
+            echo "$FAILED of $TOTAL tests failed!"
+            grep -E '\] FAILED: ' "$LOG" || true
+            echo "status=failure" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
 
-          echo "Could not determine test results"
-          echo "status=unknown" >> $GITHUB_OUTPUT
-          exit 1
+          if [ "$TOTAL" = "0" ]; then
+            echo "No tests were run."
+            echo "status=failure" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          echo "All $TOTAL tests passed!"
+          echo "status=success" >> "$GITHUB_OUTPUT"
 
       - name: Shutdown Simulator
         if: always()

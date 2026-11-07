@@ -150,6 +150,9 @@ using namespace SparkyStudios::Audio::Amplitude::Tests;
             self.progressView.progress = (float)(i + 1) / (float)totalTests;
         });
 
+        // Logged before the test runs, so a crash names the test that caused it.
+        NSLog(@"[AmplitudeTests] [%ld/%ld] Running: %@", (long)(i + 1), (long)totalTests, testName);
+
         BOOL success = [self runTest:testName];
 
         if (success)
