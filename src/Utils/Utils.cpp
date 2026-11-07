@@ -45,6 +45,16 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
+    void Deinterleave(const AmReal32* in, AudioBuffer* out, AmUInt64 outOffset, AmUInt64 numFrames, AmUInt32 numChannels)
+    {
+        for (AmUInt32 j = 0; j < numChannels; ++j)
+        {
+            AmReal32* channel = out->GetChannel(j).begin() + outOffset;
+            for (AmUInt64 i = 0; i < numFrames; ++i)
+                channel[i] = in[i * numChannels + j];
+        }
+    }
+
     void Interleave(const AudioBuffer* in, AmUInt64 inOffset, AmReal32* out, AmUInt64 outOffset, AmInt32 numSamples, AmInt32 numChannels)
     {
         if (numChannels == 1)

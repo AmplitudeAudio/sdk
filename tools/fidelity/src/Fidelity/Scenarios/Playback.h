@@ -54,6 +54,11 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     [[nodiscard]] std::unique_ptr<Scenario> MakeStreamingEquivalenceScenario();
 
     /**
+     * @brief P13: a streamed loop crossing several seams and one seek, against the in-memory sound and the click target.
+     */
+    [[nodiscard]] std::unique_ptr<Scenario> MakeStreamedLoopSeekScenario();
+
+    /**
      * @brief P6: static playback must null between block sizes 256 and 4096.
      */
     [[nodiscard]] std::unique_ptr<Scenario> MakeBlockSizeIndependenceScenario();

@@ -1,0 +1,92 @@
+{
+  "driver": "null",
+  "output": {
+    "frequency": 48000,
+    "buffer_size": 4096,
+    "format": "Float32"
+  },
+  "mixer": {
+    "panning_mode": "BinauralHighQuality",
+    "active_channels": 1,
+    "virtual_channels": 100,
+    "pipeline": "default.ampipeline"
+  },
+  "hrtf": {
+    "amir_file": "data/sadie_h12.amir"
+  },
+  "game": {
+    "listener_fetch_mode": "Nearest",
+    "track_environments": false,
+    "listeners": 100,
+    "entities": 4096,
+    "environments": 512,
+    "rooms": 1024,
+    "doppler_factor": 1.0,
+    "sound_speed": 343,
+    "obstruction": {
+      "lpf_curve": {
+        "parts": [
+          {
+            "start": {
+              "x": 0,
+              "y": 0
+            },
+            "end": {
+              "x": 1,
+              "y": 1
+            },
+            "fader": "Linear"
+          }
+        ]
+      },
+      "gain_curve": {
+        "parts": [
+          {
+            "start": {
+              "x": 0,
+              "y": 1
+            },
+            "end": {
+              "x": 1,
+              "y": 1
+            },
+            "fader": "Linear"
+          }
+        ]
+      }
+    },
+    "occlusion": {
+      "lpf_curve": {
+        "parts": [
+          {
+            "start": {
+              "x": 0,
+              "y": 0
+            },
+            "end": {
+              "x": 1,
+              "y": 1
+            },
+            "fader": "Linear"
+          }
+        ]
+      },
+      "gain_curve": {
+        "parts": [
+          {
+            "start": {
+              "x": 0,
+              "y": 1
+            },
+            "end": {
+              "x": 1,
+              "y": 0
+            },
+            "fader": "Linear"
+          }
+        ]
+      }
+    }
+  },
+  "buses_file": "pc.buses.ambus"
+}

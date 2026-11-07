@@ -723,3 +723,11 @@ A1|surround51|b1024_f60_j0_r48000|integrity.inf	0.000000	count	lower	0.000000
 A1|surround51|b1024_f60_j0_r48000|integrity.denormals	0.000000	count	lower	0.000000
 A1|surround51|b1024_f60_j0_r48000|integrity.clipped	0.000000	count	lower	0.000000
 A1|surround51|b1024_f60_j0_r48000|integrity.dropouts	0.000000	count	lower	0.000000
+P13|loop_sine_48000|b1024_f60_j0_r48000|determinism.memory.mismatches	0.000000	count	lower	0.000000
+P13|loop_sine_48000|b1024_f60_j0_r48000|determinism.stream.mismatches	0.000000	count	lower	0.000000
+P13|loop_sine_48000|b1024_f60_j0_r48000|null.residualPeakDbfs	-400.000000	dBFS	lower	-120.000000
+P13|loop_sine_48000|b1024_f60_j0_r48000|null.residualRmsDbfs	-400.000000	dBFS	lower	-
+P13|loop_sine_48000|b1024_f60_j0_r48000|null.lagSamples	0.000000	samples	lower	-
+P13|loop_sine_48000|b1024_f60_j0_r48000|click.worstDbfs	-99.304969	dBFS	lower	-90.000000
+P13|loop_sine_48000|b1024_f60_j0_r48000|click.events	4.000000	count	lower	-
+P13|loop_sine_48000|b1024_f60_j0_r48000|click.bandPeakDbfs	-29.747614	dBFS	lower	-

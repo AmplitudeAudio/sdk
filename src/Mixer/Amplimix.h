@@ -33,6 +33,8 @@
 #include <Mixer/InstancePipelineTable.h>
 #include <Mixer/LayerGainMixer.h>
 #include <Mixer/SoundData.h>
+#include <Mixer/Streaming/StreamingThread.h>
+#include <Mixer/Voice/VirtualCursor.h>
 #include <Mixer/Voice/Voice.h>
 
 #include <Utils/miniaudio/miniaudio_utils.h>
@@ -90,6 +92,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmReal32 currentSpeed = 1.0f; // smoothed pitch x play speed, audio thread
         std::atomic<eVoiceState> voiceState{ eVoiceState::Idle }; // voice state after the last block, for any thread
         std::atomic<AmUInt64> voicePosition{ 0 }; // voice source position after the last block, for any thread
+        VirtualCursor resumeCursor; // the virtual cursor a scheduled streamed voice resumes; written before the layer is live
+        std::atomic<bool> resumesCursor{ false }; // the position of a not yet started voice follows resumeCursor
         std::atomic<AmReal32> gain; // gain
         std::atomic<AmReal32> pitch; // pitch
         SoundData* snd = nullptr; // sound data
@@ -109,7 +113,80 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 pipelineFrames = 0; // frames per-instance pipelines are pre-configured with, set by StartVoice
         std::atomic<AmUInt32> pins{ 0 }; // game-thread readers keeping the layer alive, see AmplimixImpl::PinLayer
         std::atomic<bool> destroyPending{ false }; // the game thread is destroying the layer: pins fail, see PinLayer
-        bool releaseRequested = false; // game thread only: a release or discard was pushed, the layer may be destroyed
+        std::atomic<bool> releaseRequested{ false }; // a release or discard was pushed, the layer may be destroyed
+
+        // Streamed sounds, game thread only (guarded by AmplimixImpl::_streamMutex). The audio thread only reads rings.
+        StreamingThread* streaming = nullptr; // the streaming thread that owns this layer's sources, set by StartVoice
+        StreamSource* stream = nullptr; // the stream the voice reads (game-side bookkeeping only)
+        StreamSource* pendingStream = nullptr; // filling for a seek that is not posted yet, or posted and not yet adopted
+        AmUInt64 pendingPosition = 0;
+        AmUInt64 pendingClock = kVoiceAsap;
+        bool swapPosted = false; // a Seek with a stream was posted; waiting for StreamSwapped or StreamDropped
+        AmUInt32 swapsPosted = 0; // seeks posted to the voice with a stream (diagnostics)
+        AmUInt32 swapsAdopted = 0; // posted seeks that ended in a StreamSwapped adopting their stream (diagnostics)
+        AmUInt32 swapsDropped = 0; // posted seeks that ended in a StreamDropped of their pending stream (diagnostics)
+        bool hasQueuedSeek = false; // a seek requested while a swap was in flight (the newest wins)
+        AmUInt64 queuedPosition = 0;
+        AmUInt64 queuedClock = kVoiceAsap;
+        std::atomic<bool> activationPending{ false }; // waiting for the start prefill
+        std::atomic<bool> suppressBegin{ false }; // a stop arrived before the voice was activated: the channel never begins
+        std::atomic<bool> stopRequested{ false }; // a Stop or Release was posted: no more seeks are planned or posted
+        std::atomic<bool> muted{ false }; // stopped before it was heard: the gain stays at zero
+        bool underrunWarned = false;
+        bool inStreamedLayers = false; // listed in AmplimixImpl::_streamedLayers; guarded by _streamMutex
+        // The voice reported a lost StreamDropped: streams are never retired because of it (they stay held until their own
+        // Dropped or the layer is destroyed), and the swapPosted gate is lifted since the in-flight stream may be the one
+        // whose drop was lost. Seeks then post fresh streams without waiting; the voice resolves them in order.
+        bool dropsLost = false;
+        bool streamLoop = false; // the sound loops
+        AmUInt32 streamWraps = 0; // wraps allowed at start (SourceReader::kInfiniteWraps for forever)
+        AmUInt32 loopsSeen = 0; // wraps reported by Looped events so far
+        AmUInt64 prerollFrames = 0; // preroll a stream plan needs, cached from the voice at start
+        std::vector<StreamSource*> heldStreams; // every stream this layer created and has not retired yet
+        std::vector<StreamSource*> instanceSources; // owned instance streams, retired with the layer
+
+        /// Where the audio thread reports how a streamed instance's reader ended up after its attach seek.
+        struct InstanceSlipProbe
+        {
+            static constexpr AmUInt32 kPending = 0; ///< The attach command did not run yet.
+            static constexpr AmUInt32 kExact = 1; ///< The reader sits at the planned cursor.
+            static constexpr AmUInt32 kSlipped = 2; ///< The reader slipped to another frame than the planned cursor.
+
+            std::atomic<AmUInt32> state{ kPending };
+            std::atomic<AmUInt64> actual{ 0 }; ///< The reader cursor after the seek (valid once not pending).
+        };
+
+        /// A streamed instance whose attach waits for its stream's prefill (game thread, see UpdateStreams).
+        struct PendingInstanceAttach
+        {
+            AmChannelInstanceID instanceId = kAmInvalidObjectId;
+            std::shared_ptr<VoiceStreamSlot> slot;
+            StreamSource* source = nullptr; ///< Owned by the layer through instanceSources.
+            AmUInt64 cursor = 0; ///< The source frame the stream was planned at.
+            std::shared_ptr<InstanceSlipProbe> probe;
+        };
+
+        /// A streamed instance the layer created a stream for (game thread).
+        struct InstanceStreamEntry
+        {
+            AmChannelInstanceID instanceId = kAmInvalidObjectId;
+            StreamSource* source = nullptr; ///< Owned by the layer through instanceSources.
+            AmUInt64 cursor = 0; ///< The planned cursor.
+            std::shared_ptr<VoiceStreamSlot> slot; ///< Shared with the audio thread: its use count tells when it let go.
+            std::shared_ptr<InstanceSlipProbe> probe;
+            bool slipReported = false;
+        };
+
+        /// A detached instance stream: retired once the audio thread dropped every reference to its slot.
+        struct RetiringInstanceStream
+        {
+            std::shared_ptr<VoiceStreamSlot> slot;
+            StreamSource* source = nullptr;
+        };
+
+        std::vector<PendingInstanceAttach> pendingAttaches; // instances whose stream is still filling
+        std::vector<InstanceStreamEntry> instanceEntries; // instances with a stream, attached or pending
+        std::vector<RetiringInstanceStream> retiringInstances; // detached instance streams not retired yet
 
         ~AmplimixLayerImpl() override;
 
@@ -307,7 +384,29 @@ namespace SparkyStudios::Audio::Amplitude
          * @brief Records a transport command for a voice (game thread). Sent by the next @c FlushVoiceCommands().
          */
         void PostVoiceCommand(
-            AmUInt32 id, AmUInt32 layer, eVoiceCommandKind kind, AmTime duration = 0.0, AmUInt64 position = 0, AmUInt64 frame = kVoiceAsap);
+            AmUInt32 id,
+            AmUInt32 layer,
+            eVoiceCommandKind kind,
+            AmTime duration = 0.0,
+            AmUInt64 position = 0,
+            AmUInt64 frame = kVoiceAsap,
+            StreamSource* stream = nullptr);
+
+        /**
+         * @brief Seeks a voice to a source position (game thread).
+         *
+         * An in-memory voice gets a plain @c Seek command. A streamed voice gets a fresh stream planned at @p position:
+         * the seek is posted once that stream holds its prefill. A seek requested while another is in flight is queued
+         * (the newest wins) and runs when the voice reports the swap.
+         *
+         * @param id The owner id checked against the layer.
+         * @param layer The layer handle.
+         * @param position The source frame to seek to.
+         * @param clock The audio-clock frame the seek applies at, or @c kVoiceAsap.
+         *
+         * @return @c false if the layer is not playing for @p id or no stream could be created.
+         */
+        bool SeekVoice(AmUInt32 id, AmUInt32 layer, AmUInt64 position, AmUInt64 clock);
 
         /**
          * @brief Sends the recorded voice commands to the audio thread (game thread, once per frame).
@@ -353,9 +452,18 @@ namespace SparkyStudios::Audio::Amplitude
         /**
          * @brief Gives a separate-mode instance its own voice stream, starting at the instance cursor (game thread).
          *
+         * A streamed layer opens a decoder of its own for the instance and plans its ring at @p cursor; the attach is
+         * pushed once that stream holds its prefill (until then the instance is silent). The attach is recorded as soon
+         * as the stream exists: a pending attach is never created twice.
+         *
+         * @param id The channel id owning the layer.
+         * @param layer The layer.
+         * @param instanceId The instance to attach.
+         * @param cursor The instance's last published cursor, in source frames.
+         *
          * @return @c false if the layer is not playing for @p id or the stream could not be created.
          */
-        bool AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId);
+        bool AttachInstanceStream(AmUInt32 id, AmUInt32 layer, AmChannelInstanceID instanceId, AmUInt64 cursor = 0);
 
         /**
          * @brief Removes the voice stream of a separate-mode instance; it is released after the mix (game thread).
@@ -501,6 +609,23 @@ namespace SparkyStudios::Audio::Amplitude
          * The build has no unit-test define to compile this out with, so it stays in every build.
          */
         void SetMixInProgressForTesting(bool inProgress);
+
+        /// Game-side stream bookkeeping summed over the live streamed layers (tests only).
+        struct StreamDiagnostics
+        {
+            bool swapPosted = false; ///< a layer has a seek posted and not yet resolved
+            bool hasPending = false; ///< a layer holds a planned stream that the voice has not adopted
+            bool hasQueuedSeek = false; ///< a layer holds a seek waiting for the in-flight one
+            AmUInt32 swapsPosted = 0;
+            AmUInt32 swapsAdopted = 0;
+            AmUInt32 swapsDropped = 0;
+            AmUInt32 pendingInstanceAttaches = 0; ///< instance streams waiting for their prefill
+            AmUInt32 instanceStreams = 0; ///< instance streams attached or pending
+            AmUInt32 retiringInstanceStreams = 0; ///< detached instance streams waiting for the audio thread to let go
+            AmUInt32 streamedLayers = 0; ///< layers UpdateStreams() visits
+        };
+
+        [[nodiscard]] StreamDiagnostics GetStreamDiagnosticsForTesting();
 #endif
 
     private:
@@ -510,7 +635,17 @@ namespace SparkyStudios::Audio::Amplitude
         void DestroyDetachedLayers();
         bool TryDestroyLayer(AmplimixLayerImpl* layer);
         void UpdateVoiceBlockFrames();
+        [[nodiscard]] AmUInt64 GetStreamCapacityFloor(AmUInt32 sampleRate) const;
         void DrainVoiceCommands();
+        void UpdateStreams();
+        bool AttachStreamedInstance(AmplimixLayerImpl* layer, AmUInt32 id, AmChannelInstanceID instanceId, AmUInt64 cursor);
+        void PushInstanceAttach(AmplimixLayerImpl* layer, AmUInt32 id, const AmplimixLayerImpl::PendingInstanceAttach& attach);
+        void PushActivation(AmplimixLayerImpl* layer);
+        void PostStreamSeek(AmplimixLayerImpl* layer);
+        bool SeekStreamedLayer(AmplimixLayerImpl* layer, AmUInt64 position, AmUInt64 clock);
+        void HandleStreamDropped(AmplimixLayerImpl* layer, StreamSource* stream);
+        void RunQueuedSeek(AmplimixLayerImpl* layer);
+        void HandleStreamSwapped(AmplimixLayerImpl* layer, const StreamSource* stream);
         void HandleVoiceEvent(const VoiceEvent& event);
         void HandleVoiceEnded(AmplimixLayerImpl* layer, ChannelInternalState* channelState);
         bool MixVoice(AmplimixLayerImpl* layer, AudioBuffer* buffer, AmUInt64 offset, AmUInt64 frames, AmUInt64 blockClock);
@@ -551,6 +686,8 @@ namespace SparkyStudios::Audio::Amplitude
         std::unique_ptr<VoiceEventQueue> _voiceEvents;
         std::vector<VoiceCommand> _voiceOutbox; // game side only, guarded by _voiceOutboxMutex
         std::vector<AmUInt32> _pendingDestroys; // game thread only: released layers waiting for detach and unpin
+        std::recursive_mutex _streamMutex; // guards the streamed-layer bookkeeping; game side only, never taken by the audio thread
+        std::vector<AmUInt32> _streamedLayers; // indices of the layers that stream; guarded by _streamMutex
         std::mutex _voiceOutboxMutex; // transport may be called from any game-side thread; never taken by the audio thread
         std::atomic<AmUInt64> _audioClock{ 0 };
         AmUInt64 _voiceBlockFrames = 0;

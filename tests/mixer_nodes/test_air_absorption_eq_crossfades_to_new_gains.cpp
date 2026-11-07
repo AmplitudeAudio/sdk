@@ -17,7 +17,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Mixer/Nodes/AttenuationNode.h>
+#include <Mixer/Nodes/AirAbsorptionNode.h>
 
 #include "NodeTestCase.h"
 #include "TestRegistry.h"

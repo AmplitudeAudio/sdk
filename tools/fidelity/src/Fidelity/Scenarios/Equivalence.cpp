@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include <cmath>
+#include <memory>
+
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Fidelity/Analysis/Null.h>
 #include <Fidelity/AssetGenerator.h>
@@ -137,6 +140,91 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
             }
         };
 
+        /**
+         * @brief A streamed looping tone that crosses several loop seams and is seeked once; it must be sample-identical to
+         * the in-memory sound under the same actions, and click-free at the seams and at the seek.
+         */
+        class StreamedLoopSeekScenario final : public Scenario
+        {
+        public:
+            [[nodiscard]] std::string Id() const override
+            {
+                return "P13";
+            }
+
+            [[nodiscard]] std::string Title() const override
+            {
+                return "Streamed loop and seek";
+            }
+
+            [[nodiscard]] std::uint32_t Dimensions() const override
+            {
+                return 0;
+            }
+
+            [[nodiscard]] std::vector<std::string> Variants() const override
+            {
+                return { "loop_sine_48000" };
+            }
+
+            void Measure(const RunContext& context, const GridPoint& point, const std::string& variant, Measurement& out) const override
+            {
+                const StimulusSpec* spec = FindStimulus(variant);
+                if (spec == nullptr)
+                {
+                    out.error = "unknown stimulus " + variant;
+                    return;
+                }
+
+                // The sound lasts one second: the seams fall at 1 s, 2 s, 3 s and 4 s of play, and the seek at 2.3 s lands on a
+                // whole number of periods of the tone.
+                const double fs = point.outputRate;
+                const std::uint64_t seekAt = kLeadIn + Seconds(2.3, fs);
+                const std::uint64_t duration = kLeadIn + Seconds(4.5, fs);
+                const RenderSettings settings = IsolatedSettings(point, duration);
+
+                Capture memory;
+                Capture stream;
+                if (!RenderDeterministic(context, settings, ActionsFor(SoundName(*spec, false), seekAt), "memory", out, memory) ||
+                    !RenderDeterministic(context, settings, ActionsFor(SoundName(*spec, true), seekAt), "stream", out, stream))
+                    return;
+
+                if (!RequireSignal(out, memory, kLeadIn, duration) || !RequireSignal(out, stream, kLeadIn, duration))
+                {
+                    out.capture = std::move(stream);
+                    return;
+                }
+
+                NullCompare(memory, stream, out);
+
+                const std::uint64_t begin = OnsetFrame(stream, kLeadIn) + Seconds(0.05, fs);
+                AddClickMetrics(out, stream, 4000.0, begin, duration);
+
+                out.capture = std::move(stream);
+            }
+
+        private:
+            static ActionFactory ActionsFor(const std::string& sound, std::uint64_t seekAt)
+            {
+                return [sound, seekAt]()
+                {
+                    auto channel = std::make_shared<Channel>();
+                    return std::vector<TimedAction>{
+                        { kLeadIn, "play",
+                          [sound, channel]()
+                          {
+                              *channel = amEngine->Play(amEngine->GetSoundHandle(sound));
+                          } },
+                        { seekAt, "seek",
+                          [channel]()
+                          {
+                              AM_UNUSED(channel->SetPlaybackPosition(500.0));
+                          } },
+                    };
+                };
+            }
+        };
+
         class BlockSizeIndependenceScenario final : public EquivalenceScenario
         {
         public:
@@ -223,6 +311,11 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
     std::unique_ptr<Scenario> MakeStreamingEquivalenceScenario()
     {
         return std::make_unique<StreamingEquivalenceScenario>();
+    }
+
+    std::unique_ptr<Scenario> MakeStreamedLoopSeekScenario()
+    {
+        return std::make_unique<StreamedLoopSeekScenario>();
     }
 
     std::unique_ptr<Scenario> MakeBlockSizeIndependenceScenario()

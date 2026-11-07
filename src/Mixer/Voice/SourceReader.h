@@ -25,31 +25,27 @@
 namespace SparkyStudios::Audio::Amplitude
 {
     struct SoundData;
+    class StreamSource;
 
     /**
      * @brief Where a voice reads its frames: a whole sound in memory, or a stream decoded on demand.
      */
     struct VoiceSource
     {
-        /// Decodes up to @p frames frames starting at source frame @p offset into @c buffer, from frame 0. Returns the count.
-        using DecodeFunction = AmUInt64 (*)(void* context, AmUInt64 offset, AmUInt64 frames);
-
-        const AudioBuffer* buffer = nullptr; ///< In memory: the whole sound. Streamed: the decode target.
-        DecodeFunction decode = nullptr;     ///< Null for in-memory sounds.
-        void* context = nullptr;
-        AmUInt64 decodeCapacity = 0;         ///< Frames @c buffer holds, for streams.
+        const AudioBuffer* buffer = nullptr; ///< In memory: the whole sound. Null for streams.
+        StreamSource* stream = nullptr; ///< Streamed: the ring the producer fills. Null for in-memory sounds.
         AmUInt64 length = 0;                 ///< Sound length in frames.
         AmUInt16 channels = 0;
         AmUInt32 sampleRate = 0;
 
         [[nodiscard]] bool IsStreamed() const
         {
-            return decode != nullptr;
+            return stream != nullptr;
         }
 
         [[nodiscard]] bool IsValid() const
         {
-            return buffer != nullptr && length > 0 && channels > 0 && sampleRate > 0 && (!IsStreamed() || decodeCapacity > 0);
+            return length > 0 && channels > 0 && sampleRate > 0 && (IsStreamed() || buffer != nullptr);
         }
     };
 
@@ -64,7 +60,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 firstWrapOffset = 0; ///< Offset in the read of the first frame after the first seam.
         bool ended = false;           ///< The end of a non-looping source was reached during this read.
         AmUInt64 endOffset = 0;       ///< Offset in the read of the first frame past the end.
-        bool starved = false;         ///< A stream returned fewer frames than asked before its end.
+        bool underrun = false; ///< The stream had fewer frames than asked before its end. The missing frames are silence and
+                               ///< the cursor holds; the reader does not end.
     };
 
     /**
@@ -92,6 +89,21 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 Read(AudioBuffer& out, AmUInt64 offset, AmUInt64 frames, SourceReadReport& report);
 
         /**
+         * @brief Replaces the source's stream and resets the ring index. The next @c Seek() maps the cursor into the new ring.
+         */
+        void BindStream(StreamSource* stream);
+
+        /**
+         * @brief Sets whether reads release the frames they consume from the ring (default @c true).
+         *
+         * A reader copy that only reads ahead of the main reader must not release frames the main reader still needs.
+         */
+        void SetReleasesRing(bool releases)
+        {
+            _releasesRing = releases;
+        }
+
+        /**
          * @brief Moves the cursor, clamped into the region, and clears the ended state. Keeps the remaining loop count.
          */
         void Seek(AmUInt64 frame);
@@ -101,6 +113,14 @@ namespace SparkyStudios::Audio::Amplitude
          * clamped at the region start otherwise.
          */
         [[nodiscard]] AmUInt64 Rewind(AmUInt64 frames) const;
+
+        /**
+         * @brief Gets the stream this reader reads, or null for an in-memory source.
+         */
+        [[nodiscard]] StreamSource* GetStream() const
+        {
+            return _source.stream;
+        }
 
         [[nodiscard]] AmUInt64 GetCursor() const
         {
@@ -129,6 +149,7 @@ namespace SparkyStudios::Audio::Amplitude
 
     private:
         AmUInt64 CopyFrames(AudioBuffer& out, AmUInt64 offset, AmUInt64 frames);
+        void MapCursorToRing();
 
         VoiceSource _source;
         AmUInt64 _start = 0;
@@ -136,6 +157,8 @@ namespace SparkyStudios::Audio::Amplitude
         AmUInt64 _cursor = 0;
         bool _loop = false;
         AmUInt32 _remainingWraps = 0;
+        AmUInt64 _ringIndex = 0;
+        bool _releasesRing = true;
         bool _ended = true;
     };
 } // namespace SparkyStudios::Audio::Amplitude

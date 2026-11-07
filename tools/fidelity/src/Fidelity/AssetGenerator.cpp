@@ -97,6 +97,7 @@ namespace SparkyStudios::Audio::Amplitude::Fidelity
                  << "    \"obstruction\": { \"lpf_curve\": " << CurveJson(0, 1) << ", \"gain_curve\": " << CurveJson(1, 1) << " },\n"
                  << "    \"occlusion\": { \"lpf_curve\": " << CurveJson(0, 1) << ", \"gain_curve\": " << CurveJson(1, 0) << " }\n"
                  << "  },\n"
+                 << "  \"streaming\": { \"synchronous\": true },\n"
                  << "  \"buses_file\": \"fidelity.buses.ambus\"\n"
                  << "}\n";
             return json.str();

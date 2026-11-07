@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
-#include <cmath>
-
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
 #include <Mixer/Nodes/AttenuationNode.h>
@@ -31,11 +28,11 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         constexpr AmUInt32 kSampleRate = 48000;
         constexpr AmReal32 kAmplitude = 0.5f;
 
-        // Air absorption with fixed band gains: low and mid untouched, high band at 0.25 (-12 dB).
-        class FixedAirAbsorptionAttenuation final : public MockAttenuation
+        // Air absorption enabled, with a high band at 0.25 (-12 dB): the AirAbsorption node would darken the signal.
+        class AbsorbingAttenuation final : public MockAttenuation
         {
         public:
-            FixedAirAbsorptionAttenuation()
+            AbsorbingAttenuation()
                 : MockAttenuation(100.0)
             {}
 
@@ -51,7 +48,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         };
     } // namespace
 
-    AM_TEST_CASE(NodeTestCase, mixer_nodes, attenuation_node_air_absorption_uses_db)
+    AM_TEST_CASE(NodeTestCase, mixer_nodes, attenuation_node_leaves_air_absorption_to_its_own_node)
     {
     public:
         void Run() override
@@ -66,19 +63,13 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             listenerState.Update();
             GetMockLayer().SetListener(InitTestListener(&listenerState));
 
-            FixedAirAbsorptionAttenuation attenuation;
+            AbsorbingAttenuation attenuation;
             GetMockLayer().SetAttenuation(&attenuation);
 
-            // The distance gain at 1 m is 0.99; air absorption must only shape the spectrum.
-            const AmReal32 distanceGain = 0.99f;
-
-            // A 12 kHz tone sits in the high shelf: -12 dB there must take it at least 6 dB down.
+            // The distance gain at 1 m is 0.99. A 12 kHz tone sits in the band air absorption would take 12 dB down,
+            // and the Attenuation node must leave it at the distance gain.
             const AmReal32 highPeak = SteadyStatePeak(12000.0f);
-            AM_EXPECT(highPeak < 0.5f * distanceGain * kAmplitude);
-
-            // A 200 Hz tone sits in the untouched low band.
-            const AmReal32 lowPeak = SteadyStatePeak(200.0f);
-            AM_EXPECT(lowPeak > 0.9f * distanceGain * kAmplitude);
+            AM_EXPECT(highPeak > 0.9f * 0.99f * kAmplitude);
         }
 
     private:
@@ -90,7 +81,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AudioBuffer input(kFrames, 1);
             AmReal32 peak = 0.0f;
 
-            // Blocks 0-1 let the gain ramp and the EQ crossfade settle; measure the last one.
+            // Blocks 0-1 let the gain ramp settle; measure the last one.
             for (AmUInt64 block = 0; block < 4; ++block)
             {
                 for (AmUInt64 i = 0; i < kFrames; ++i)
@@ -112,5 +103,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, attenuation_node_air_absorption_uses_db);
+    AM_REGISTER_TEST(mixer_nodes, attenuation_node_leaves_air_absorption_to_its_own_node);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

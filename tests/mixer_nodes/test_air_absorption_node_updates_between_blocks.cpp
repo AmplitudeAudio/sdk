@@ -14,7 +14,7 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-#include <Mixer/Nodes/AttenuationNode.h>
+#include <Mixer/Nodes/AirAbsorptionNode.h>
 
 #include "NodeTestCase.h"
 #include "TestRegistry.h"
@@ -28,7 +28,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     {
         // Mock attenuation with air absorption enabled: absorption increases with distance,
         // and higher frequency bands decay faster (mirroring real air absorption). The band
-        // index maps to the EQ bands in AttenuationNode: 0 = low shelf, 1 = mid peaking,
+        // index maps to the EQ bands in AirAbsorptionNode: 0 = low shelf, 1 = mid peaking,
         // 2 = high shelf. Band-dependent values are required so that Normalize() yields
         // differing gains per block: this is what drives _needUpdateGains between the two
         // Process() calls and exercises the crossfade path under test.
@@ -67,7 +67,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         };
     } // namespace
 
-    AM_TEST_CASE(NodeTestCase, mixer_nodes, attenuation_node_air_absorption_updates_between_blocks)
+    AM_TEST_CASE(NodeTestCase, mixer_nodes, air_absorption_node_updates_between_blocks)
     {
     public:
         void Run() override
@@ -95,7 +95,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             // Same node instance across both blocks: the gain change between them exercises
             // the air-absorption crossfade path with the hoisted buffers.
-            auto instance = CreateAndConfigureNode<AttenuationNode>(frameCount, channelCount);
+            auto instance = CreateAndConfigureNode<AirAbsorptionNode>(frameCount, channelCount);
             auto* processor = AsProcessor(instance);
             AM_EXPECT_NOT(processor == nullptr);
 
@@ -126,5 +126,5 @@ namespace SparkyStudios::Audio::Amplitude::Tests
         }
     };
 
-    AM_REGISTER_TEST(mixer_nodes, attenuation_node_air_absorption_updates_between_blocks);
+    AM_REGISTER_TEST(mixer_nodes, air_absorption_node_updates_between_blocks);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

@@ -32,15 +32,20 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            SoundHandle test_sound_01 = amEngine->GetSoundHandle("test_sound_01");
+            // A looping sound: a one-shot can reach its end on a slow runner, leaving an invalid instance to move.
+            SoundHandle sound = amEngine->GetSoundHandle("test_sound_07");
 
-            Channel channel = amEngine->Play(test_sound_01);
+            Channel channel = amEngine->Play(sound);
             amEngine->WaitUntilFrames(2);
             AM_EXPECT(channel.Valid());
+            if (!channel.Valid())
+                return;
 
             channel.EnableInstancing(eChannelInstanceMode_Separate);
             ChannelInstance instance = channel.AddInstance({ 100.0f, 0.0f, 50.0f });
             AM_EXPECT(instance.Valid());
+            if (!instance.Valid())
+                return;
 
             // The audio thread writes the instance cursor back once per mix; each publish (requested here by
             // moving the instance, performed by the next frame) drains it into the channel state where the test
@@ -64,6 +69,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
 
             // Continued playback: the cursor must not have restarted from zero.
             AM_EXPECT(WaitUntil([&]() { return drainedCursor() > cursorBeforePause; }));
+
+            channel.Stop(0.0);
         }
     };
 

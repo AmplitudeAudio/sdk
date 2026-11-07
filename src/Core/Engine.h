@@ -198,6 +198,7 @@ namespace SparkyStudios::Audio::Amplitude
         void SetRtpcValue(const AmString& name, double value) const override;
         [[nodiscard]] std::shared_ptr<Driver> GetDriver() const override;
         [[nodiscard]] AmplimixImpl* GetMixer() const override;
+        [[nodiscard]] AmUInt64 GetStreamUnderrunCount() const;
         [[nodiscard]] const AmOsString& GetConfigurationPath() const override;
         [[nodiscard]] AmReal32 GetSoundSpeed() const override;
         [[nodiscard]] AmReal32 GetDopplerFactor() const override;

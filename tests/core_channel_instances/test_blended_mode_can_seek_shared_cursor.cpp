@@ -26,12 +26,15 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     public:
         void Run() override
         {
-            SoundHandle sound = amEngine->GetSoundHandle("test_sound_01");
+            // A looping sound: a one-shot can reach its end on a slow runner before the seek is observed.
+            SoundHandle sound = amEngine->GetSoundHandle("test_sound_07");
 
             Channel channel = amEngine->Play(sound);
             amEngine->WaitUntilFrames(2);
 
             AM_EXPECT(channel.Valid());
+            if (!channel.Valid())
+                return;
 
             channel.EnableInstancing(eChannelInstanceMode_Blended);
             AM_UNUSED(channel.AddInstance({ 100.0f, 0.0f, 50.0f }));
@@ -44,8 +47,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT(channel.GetPlaybackPosition() < seekPosition);
             AM_EXPECT(channel.SetPlaybackPosition(seekPosition));
 
-            // The seek is applied by a mixer command on the audio thread. A slow runner can let the sound play to its
-            // end before the position is polled: the channel is then gone, and asking it for its position is an error.
+            // The seek is applied by a mixer command on the audio thread. The sound loops, so the channel stays alive
+            // until the seek is observed; a channel that is gone fails the test instead of passing it.
             AmTime playbackPosition = 0.0;
             AM_EXPECT(WaitUntil(
                 [&]()
@@ -57,7 +60,8 @@ namespace SparkyStudios::Audio::Amplitude::Tests
                     return playbackPosition >= seekPosition;
                 }));
 
-            AM_EXPECT(playbackPosition >= seekPosition || !channel.Valid());
+            AM_EXPECT(channel.Valid());
+            AM_EXPECT(playbackPosition >= seekPosition);
 
             if (channel.Valid())
                 channel.Stop(0);

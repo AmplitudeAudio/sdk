@@ -1,0 +1,152 @@
+// Copyright (c) 2026-present Sparky Studios. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <cstdlib>
+
+#include <SparkyStudios/Audio/Amplitude/Amplitude.h>
+
+#include <Core/EngineInternalState.h>
+#include <Sound/Sound.h>
+
+#include "RecordingCodec.h"
+#include "TestRegistry.h"
+
+using namespace SparkyStudios::Audio::Amplitude;
+
+namespace SparkyStudios::Audio::Amplitude::Tests
+{
+    // Seeks made while a stream is still filling supersede each other, and the one made while a swap is in flight waits
+    // for it: playback ends up at the last target, and every decoder opened for the seeks is closed exactly once.
+    AM_TEST_CASE(StreamingEngineTestCase, mixer_streaming, engine_supersedes_pending_seeks)
+    {
+    public:
+        void Run() override
+        {
+            auto* sound = static_cast<SoundImpl*>(amEngine->GetSoundHandle("AMB_Forest"));
+            AM_EXPECT(sound != nullptr);
+
+            const SoundFormat& format = sound->GetFormat();
+            const AmTime lengthMs = static_cast<AmTime>(format.GetFramesCount()) * kAmSecond / static_cast<AmTime>(format.GetSampleRate());
+            AM_EXPECT(lengthMs > 10000.0);
+
+            EventCount began;
+            Channel channel = amEngine->Play(sound);
+            AM_EXPECT(channel.Valid());
+            channel.On(eChannelEvent_Begin, &CountEvent, &began);
+
+            AM_EXPECT(FramesUntil(
+                [&]()
+                {
+                    return began.count.load() > 0;
+                }));
+
+            // From now on every decode takes 30 ms: a seek's ring needs several frames to fill.
+            RecordingState::Get().SetDelay(30);
+
+            auto& mixer = amEngine->GetState()->mixer;
+
+            const AmTime first = lengthMs * 0.8;
+            const AmTime second = lengthMs * 0.6;
+            const AmTime third = lengthMs * 0.2;
+            const AmTime last = lengthMs * 0.4;
+
+            // Three seeks in one frame: the first two never reach the voice, each superseded by the next.
+            AM_EXPECT(channel.SetPlaybackPosition(first));
+            AM_EXPECT(channel.SetPlaybackPosition(second));
+            AM_EXPECT(channel.SetPlaybackPosition(third));
+            AM_EXPECT(!mixer.GetStreamDiagnosticsForTesting().swapPosted);
+
+            // Wait until the third seek is posted to the voice, so the next one is requested while a swap is in flight.
+            AM_EXPECT(FramesUntil(
+                [&]()
+                {
+                    return mixer.GetStreamDiagnosticsForTesting().swapPosted;
+                },
+                150));
+
+            AM_EXPECT(channel.SetPlaybackPosition(last));
+            AM_EXPECT(mixer.GetStreamDiagnosticsForTesting().hasQueuedSeek);
+
+            // Playback ends up within a second of the last target.
+            const AmTime window = 1000.0;
+            AM_EXPECT(FramesUntil(
+                [&]()
+                {
+                    const AmTime position = channel.GetPlaybackPosition();
+                    return position >= last && position < last + window;
+                },
+                150));
+
+            // Every posted seek was resolved once, nothing is left pending or queued.
+            AM_EXPECT(FramesUntil(
+                [&]()
+                {
+                    const auto state = mixer.GetStreamDiagnosticsForTesting();
+                    return !state.swapPosted && !state.hasPending && !state.hasQueuedSeek;
+                },
+                150));
+
+            const auto state = mixer.GetStreamDiagnosticsForTesting();
+            AM_EXPECT_EQ(2U, state.swapsPosted);
+            AM_EXPECT_EQ(2U, state.swapsAdopted);
+            AM_EXPECT_EQ(0U, state.swapsDropped);
+
+            // The voice's decoder, then one per adopted seek. The worker opens a seek's decoder, so a superseded seek
+            // retired before the worker reached it never opens one; any that did were freed before the end of the test.
+            // An adopted seek's decoder first streams from its target (less the resampler preroll).
+            const auto decoders = RecordingState::Get().GetDecoders();
+            AM_EXPECT(decoders.size() >= 3 && decoders.size() <= 5);
+
+            const auto frames = static_cast<AmInt64>(format.GetFramesCount());
+            const auto startsAt = [frames](const RecordedDecoder& decoder, AmReal64 ratio)
+            {
+                const AmInt64 offset = decoder.firstSeekOffset.load();
+                return offset >= 0 && std::abs(offset - static_cast<AmInt64>(static_cast<AmReal64>(frames) * ratio)) < 8192;
+            };
+
+            AmUInt64 adopted = 0;
+            for (AmSize i = 1; i < decoders.size(); ++i)
+                adopted += startsAt(*decoders[i], 0.2) || startsAt(*decoders[i], 0.4) ? 1 : 0;
+            AM_EXPECT_EQ(2ULL, adopted);
+
+            AM_EXPECT(FramesUntil(
+                [&]()
+                {
+                    for (AmSize i = 1; i < decoders.size(); ++i)
+                        if (!startsAt(*decoders[i], 0.2) && !startsAt(*decoders[i], 0.4) && decoders[i]->closed.load() != 1)
+                            return false;
+
+                    return true;
+                },
+                150));
+
+            RecordingState::Get().SetDelay(0);
+            channel.Stop(0);
+
+            AM_EXPECT(FramesUntil(
+                []()
+                {
+                    return RecordingState::Get().AllClosed();
+                }));
+
+            // Let late frees run, then nothing was closed twice.
+            for (AmUInt32 i = 0; i < 10; ++i)
+                Frame();
+
+            AM_EXPECT(RecordingState::Get().AllClosedOnce());
+        }
+    };
+
+    AM_REGISTER_TEST_DESKTOP_ONLY(mixer_streaming, engine_supersedes_pending_seeks);
+} // namespace SparkyStudios::Audio::Amplitude::Tests

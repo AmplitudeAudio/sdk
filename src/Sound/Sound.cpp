@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <atomic>
+#include <utility>
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
@@ -496,35 +497,40 @@ namespace SparkyStudios::Audio::Amplitude
         _userData = userData;
     }
 
-    AmUInt64 SoundInstance::GetAudio(AmUInt64 offset, AmUInt64 frames) const
+    std::shared_ptr<Codec::Decoder> SoundInstance::TakeStreamDecoder()
+    {
+        return std::exchange(_decoder, nullptr);
+    }
+
+    std::function<std::shared_ptr<Codec::Decoder>()> SoundInstance::MakeStreamDecoderOpener() const
     {
         AMPLITUDE_ASSERT(Valid());
 
-        if (!_parent->_stream || _decoder == nullptr || _userData == nullptr)
-            return 0;
+        if (!_parent->_stream || _parent->_codec == nullptr)
+            return {};
 
-        const auto* data = static_cast<SoundData*>(_userData);
-
-        AmUInt64 l = frames, o = offset, r = 0, s = 0;
-        AudioBuffer* b = data->chunk->buffer;
-
-        bool needFill = true;
-        do
+        return [codec = _parent->_codec, fileSystem = amEngine->GetFileSystem(),
+                filename = _parent->GetPath()]() -> std::shared_ptr<Codec::Decoder>
         {
-            const AmUInt64 n = _decoder->Stream(b, s, o, l);
-            r += n;
-
-            // If we reached the end of the file but looping is enabled, then
-            // seek back to the beginning of the file and fill the remaining part of the buffer.
-            if (needFill = n < l && _parent->_loop && _decoder->Seek(0); needFill)
+            const auto file = fileSystem != nullptr ? fileSystem->OpenFile(filename) : nullptr;
+            if (file == nullptr || !file->IsValid())
             {
-                s += n;
-                l -= n;
-                o = 0;
+                amLogError("Cannot open a stream decoder: unable to open '" AM_OS_CHAR_FMT "'.", filename.c_str());
+                return nullptr;
             }
-        } while (needFill);
 
-        return r;
+            auto decoder = codec->CreateDecoder();
+            if (decoder == nullptr || !decoder->Open(file))
+            {
+                if (decoder != nullptr)
+                    decoder->Close();
+
+                amLogError("Cannot open a stream decoder: unable to initialize a decoder for '" AM_OS_CHAR_FMT "'.", filename.c_str());
+                return nullptr;
+            }
+
+            return decoder;
+        };
     }
 
     void SoundInstance::Destroy()

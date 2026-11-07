@@ -20,62 +20,20 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
 #include <SparkyStudios/Audio/Amplitude/Mixer/Node.h>
 
-#include <DSP/Filters/BiquadResonantFilter.h>
 #include <DSP/Gain.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
     class AmplimixLayer;
-    class AudioBufferCrossFader;
-
-    class AirAbsorptionEQFilter final
-    {
-    public:
-        static void Normalize(std::array<AmReal32, kAmAirAbsorptionBandCount>& gains, AmReal32& overallGain);
-
-        AirAbsorptionEQFilter();
-        ~AirAbsorptionEQFilter();
-
-        void Configure(AmUInt64 frameCount, AmUInt16 channelCount);
-
-        /**
-         * @brief Sets the EQ band gains, in dB (0 dB leaves a band untouched).
-         */
-        void SetGains(AmReal32 gainLow, AmReal32 gainMid, AmReal32 gainHigh);
-
-        void Process(const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate);
-
-    private:
-        void EnsureFilters();
-        void ApplyFilters(AmUInt32 set, const AudioBuffer& input, AudioBuffer& output, AmReal32 sampleRate);
-        void CopyFilterState(AmUInt32 fromSet, AmUInt32 toSet);
-
-        BiquadResonantFilter _eqFilterFactory;
-
-        std::shared_ptr<FilterInstance> _lowShelfFilter[2];
-        std::shared_ptr<FilterInstance> _peakingFilter[2];
-        std::shared_ptr<FilterInstance> _highShelfFilter[2];
-
-        AudioBuffer _tempBuffer;
-        AudioBuffer _crossfadeBuffer;
-        AudioBufferCrossFader* _crossFader;
-
-        AmUInt32 _currentSet;
-        bool _needUpdateGains;
-    };
 
     class AttenuationNodeInstance final : public ProcessorNodeInstance
     {
     public:
         AttenuationNodeInstance();
 
-        void Configure(AmUInt64 frameCount, AmUInt16 channelCount) override;
-
         const AudioBuffer* Process(const AudioBuffer* input) override;
 
     private:
-        std::array<AmReal32, kAmAirAbsorptionBandCount> _gains;
-        AirAbsorptionEQFilter _eqFilter;
         GainProcessor _gain[kAmMaxSupportedChannelCount];
     };
 

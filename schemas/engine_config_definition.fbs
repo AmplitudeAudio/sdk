@@ -190,6 +190,18 @@ table HRTFConfig {
   hrir_sampling:HRIRSphereSamplingMode = Bilinear;
 }
 
+/// Streamed sound decoding.
+table StreamingConfig {
+  /// Decoded audio kept ahead of each streamed reader, in milliseconds of source audio.
+  buffer_ms:uint = 500;
+
+  /// Decoded audio required before a streamed sound starts or a seek takes effect, in milliseconds.
+  prefill_ms:uint = 60;
+
+  /// Decode on the rendering thread instead of the streaming thread. For offline rendering only.
+  synchronous:bool = false;
+}
+
 table EngineConfigDefinition {
   /// Configures the playback device.
   output:PlaybackOutputConfig (required);
@@ -210,6 +222,9 @@ table EngineConfigDefinition {
   /// If empty, or the given driver name is not registered,
   /// the default driver will be used instead.
   driver:string;
+
+  /// Configures the streaming of sounds decoded on the fly.
+  streaming:StreamingConfig;
 }
 
 root_type EngineConfigDefinition;
