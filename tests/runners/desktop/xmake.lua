@@ -44,7 +44,10 @@ target("common_test_shared")
     set_kind("object")
     set_policy("build.fence", true)
 
-    add_deps("Amplitude::Shared", "build_sample_project", "generate_test_package", "ampk")
+    add_deps("Amplitude::Shared")
+    -- Build order only: ampk links the static SDK, which must not reach the link of the shared runner, where it shadows the
+    -- shared SDK (both are named Amplitude).
+    add_deps("build_sample_project", "generate_test_package", "ampk", { inherit = false })
 
     -- Platform-specific source files
     add_files("$(projectdir)/tests/common/TestRegistry.cpp")
