@@ -42,8 +42,9 @@
 #include "sound_bank_definition_generated.h"
 
 #include <Core/DefaultPlugins.h>
+#include <Core/PluginRegistry.h>
 
-#ifndef AM_PLUGINS_UNSUPPORTED
+#ifndef AM_DYNAMIC_PLUGINS_UNSUPPORTED
 #include <dylib.hpp>
 
 #if AM_PLATFORM_APPLE
@@ -62,28 +63,7 @@ namespace SparkyStudios::Audio::Amplitude
     typedef flatbuffers::Vector<uint64_t> BusIdList;
     typedef flatbuffers::Vector<flatbuffers::Offset<DuckBusDefinition>> DuckBusDefinitionList;
 
-#ifndef AM_PLUGINS_UNSUPPORTED
-    // The list of loaded plugins.
-    static std::unordered_map<std::filesystem::path, dylib::library*> gLoadedPlugins = {};
-
-    // The optional per-frame hooks exported by the loaded plugins (`PluginBeforeUpdate` and `PluginUpdate`).
-    struct PluginFrameHooks
-    {
-        void (*before)(AmTime) = nullptr;
-        void (*after)(AmTime) = nullptr;
-    };
-
-    static std::vector<PluginFrameHooks> gPluginFrameHooks = {};
-
-    static void CallPluginFrameHooks(AmTime delta, bool before)
-    {
-        for (const auto& hooks : gPluginFrameHooks)
-        {
-            if (const auto hook = before ? hooks.before : hooks.after; hook != nullptr)
-                hook(delta);
-        }
-    }
-
+#ifndef AM_DYNAMIC_PLUGINS_UNSUPPORTED
     std::filesystem::path GetExecutableRoot()
     {
         static std::filesystem::path rootPath;
@@ -509,34 +489,107 @@ namespace SparkyStudios::Audio::Amplitude
 
         _audioDriver = nullptr;
 
-#ifndef AM_PLUGINS_UNSUPPORTED
-        using namespace dylib;
+        // Engine::DestroyInstance() already unregistered the plugins; this covers an instance destroyed at exit.
+        PluginRegistry::UnregisterAll();
+    }
 
-        for (const auto& plugin : gLoadedPlugins)
+    bool IsEngineRunning()
+    {
+        return gAmplitude != nullptr && gAmplitude->GetState() != nullptr;
+    }
+
+#ifndef AM_DYNAMIC_PLUGINS_UNSUPPORTED
+    // Looks for the plugin library in the executable directory, the current directory, then the plugin search paths.
+    static std::filesystem::path FindPluginLibrary(const AmOsString& pluginLibraryName, const std::set<AmOsString>& searchPaths)
+    {
+        const AmOsString fileName = AM_STRING_TO_OS_STRING(dylib::decorations::os_default().prefix) + pluginLibraryName +
+            AM_STRING_TO_OS_STRING(dylib::decorations::os_default().suffix);
+
+        std::vector<AmOsString> directories = { GetExecutableRoot().native(), std::filesystem::current_path().native() };
+        directories.insert(directories.end(), searchPaths.begin(), searchPaths.end());
+
+        DiskFileSystem fs;
+        for (const auto& directory : directories)
         {
-            if (const auto unregisterFunc = plugin.second->get_function<bool()>("UnregisterPlugin"); !unregisterFunc())
-                amLogError("An error occurred while unloading the plugin '%s'", plugin.second->get_function<const char*()>("PluginName")());
+            fs.SetBasePath(directory);
 
-            ampooldelete(eMemoryPoolKind_Engine, library, plugin.second);
+            if (const auto realPath = fs.ResolvePath(directory); fs.Exists(fs.Join({ realPath, fileName })))
+                return std::filesystem::path(realPath) / fileName;
         }
 
-        gPluginFrameHooks.clear();
-        gLoadedPlugins.clear();
-#endif
+        return {};
     }
+
+    using PluginLibraryPtr = std::unique_ptr<dylib::library, void (*)(dylib::library*)>;
+
+    static void ClosePluginLibrary(dylib::library* plugin)
+    {
+        using dylib::library;
+        ampooldelete(eMemoryPoolKind_Engine, library, plugin);
+    }
+
+    // dylib reports every failure with an exception; none of them escapes the engine.
+    static PluginLibraryPtr OpenPluginLibrary(const std::filesystem::path& path)
+    {
+        try
+        {
+            const std::string libraryPath = AM_OS_STRING_TO_STRING(path.native());
+            return { ampoolnew(eMemoryPoolKind_Engine, dylib::library, libraryPath, dylib::decorations::none()), ClosePluginLibrary };
+        } catch (const std::exception& e)
+        {
+            amLogError("Failed to open the plugin library '" AM_OS_CHAR_FMT "': %s", path.native().c_str(), e.what());
+            return { nullptr, ClosePluginLibrary };
+        }
+    }
+
+    static const PluginDescriptor* GetPluginDescriptor(const dylib::library& library, const std::filesystem::path& path)
+    {
+        try
+        {
+            return library.get_function<const PluginDescriptor*()>(AM_PLUGIN_ENTRY_POINT_NAME)();
+        } catch (const std::exception& e)
+        {
+            amLogError(
+                "Failed to load the plugin '" AM_OS_CHAR_FMT "'. The library doesn't export " AM_PLUGIN_ENTRY_POINT_NAME
+                ". Define the plugin with AM_DEFINE_PLUGIN: %s",
+                path.native().c_str(), e.what());
+            return nullptr;
+        }
+    }
+
+    // Registers the plugin; the registry closes the library after unregistering it. On failure the library closes here.
+    static AmVoidPtr RegisterPluginLibrary(const PluginDescriptor* descriptor, PluginLibraryPtr library, const std::filesystem::path& path)
+    {
+        const AmVoidPtr handle = library->native_handle();
+        dylib::library* raw = library.get();
+
+        PluginRegistry::LibraryInfo info{ .path = path.native(),
+                                          .nativeHandle = handle,
+                                          .close = [raw]()
+                                          {
+                                              ClosePluginLibrary(raw);
+                                          } };
+
+        if (!PluginRegistry::Register(descriptor, std::move(info)))
+            return nullptr;
+
+        // The registry owns the library now, through info.close.
+        static_cast<void>(library.release());
+        return handle;
+    }
+#endif
 
     AmVoidPtr Engine::LoadPlugin(const AmOsString& pluginLibraryName)
     {
-#ifndef AM_PLUGINS_UNSUPPORTED
+#ifndef AM_DYNAMIC_PLUGINS_UNSUPPORTED
         if (pluginLibraryName.empty())
         {
             amLogError("The plugin library path is empty");
             return nullptr;
         }
 
-        // Plugins register nodes, hooks and other state the running engine reads without locking, so they can only be loaded
-        // while the engine is not initialized. They are unloaded when the engine instance is destroyed.
-        if (gAmplitude != nullptr && gAmplitude->_state != nullptr)
+        // Plugins register nodes, callbacks and other state the running engine reads without locking.
+        if (IsEngineRunning())
         {
             amLogError(
                 "The plugin '" AM_OS_CHAR_FMT
@@ -545,124 +598,64 @@ namespace SparkyStudios::Audio::Amplitude
             return nullptr;
         }
 
-        bool foundPath = false;
-        DiskFileSystem fs;
-        AmOsString pluginsDirectoryPath;
-        AmOsString finalName;
-
-        for (const auto& path : { GetExecutableRoot(), std::filesystem::current_path() })
-        {
-            pluginsDirectoryPath = path.native();
-            finalName = AM_STRING_TO_OS_STRING(dylib::decorations::os_default().prefix) + pluginLibraryName +
-                AM_STRING_TO_OS_STRING(dylib::decorations::os_default().suffix);
-
-            fs.SetBasePath(pluginsDirectoryPath);
-
-            // Search for the library in the current directory
-            if (const auto realPath = fs.ResolvePath(pluginsDirectoryPath); fs.Exists(fs.Join({ realPath, finalName })))
-            {
-                pluginsDirectoryPath = realPath;
-                foundPath = true;
-                break;
-            }
-        }
-
-        if (!foundPath)
-        {
-            // Search for the library in the search paths
-            for (const auto& path : EngineImpl::_pluginSearchPaths)
-            {
-                if (const auto realPath = fs.ResolvePath(path); fs.Exists(fs.Join({ realPath, finalName })))
-                {
-                    pluginsDirectoryPath = realPath;
-                    foundPath = true;
-                    break;
-                }
-            }
-        }
-
-        if (!foundPath)
+        const std::filesystem::path pluginPath = FindPluginLibrary(pluginLibraryName, EngineImpl::_pluginSearchPaths);
+        if (pluginPath.empty())
         {
             amLogError("The plugin '" AM_OS_CHAR_FMT "' cannot be found in any of the search paths.", pluginLibraryName.c_str());
             return nullptr;
         }
 
-        std::filesystem::path pluginPath = std::filesystem::path(pluginsDirectoryPath) / finalName;
-
-        if (gLoadedPlugins.find(pluginPath) != gLoadedPlugins.end())
+        if (const AmVoidPtr handle = PluginRegistry::FindLibrary(pluginPath.native()); handle != nullptr)
         {
             amLogWarning("The plugin '" AM_OS_CHAR_FMT "' is already loaded.", pluginLibraryName.c_str());
-            return gLoadedPlugins[pluginPath]->native_handle();
+            return handle;
         }
 
-        auto* plugin = ampoolnew(eMemoryPoolKind_Engine, dylib::library, AM_OS_STRING_TO_STRING(pluginPath.native()), dylib::decorations());
-
-        if (!plugin->get_symbol("RegisterPlugin"))
-        {
-            amLogError(
-                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a RegisterPlugin symbol.",
-                pluginLibraryName.c_str());
+        PluginLibraryPtr library = OpenPluginLibrary(pluginPath);
+        if (library == nullptr)
             return nullptr;
-        }
 
-        if (!plugin->get_symbol("UnregisterPlugin"))
-        {
-            amLogError(
-                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a UnregisterPlugin symbol.",
-                pluginLibraryName.c_str());
+        const PluginDescriptor* descriptor = GetPluginDescriptor(*library, pluginPath);
+        if (descriptor == nullptr)
             return nullptr;
-        }
 
-        if (!plugin->get_symbol("PluginName"))
-        {
-            amLogError(
-                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginName symbol.", pluginLibraryName.c_str());
-            return nullptr;
-        }
-
-        if (!plugin->get_symbol("PluginVersion"))
-        {
-            amLogError(
-                "Failed to load plugin '" AM_OS_CHAR_FMT "'. The library doesn't export a PluginVersion symbol.",
-                pluginLibraryName.c_str());
-            return nullptr;
-        }
-
-        if (const auto registerFunc = plugin->get_function<bool(Engine*, MemoryManager*)>("RegisterPlugin");
-            !registerFunc(amEngine, amMemory))
-        {
-            amLogError("Failed to load plugin '" AM_OS_CHAR_FMT "'. The plugin registration has failed.", pluginLibraryName.c_str());
-            return nullptr;
-        }
-
-        {
-            const auto GetPluginName = plugin->get_function<const char*()>("PluginName");
-            const auto GetPluginVersion = plugin->get_function<const char*()>("PluginVersion");
-            amLogInfo("Loaded Plugin '%s' Version: %s", GetPluginName(), GetPluginVersion());
-        }
-
-        {
-            const auto findHook = [plugin](const char* name) -> void (*)(AmTime)
-            {
-                try
-                {
-                    return plugin->get_function<void(AmTime)>(name);
-                } catch (const std::exception&)
-                {
-                    return nullptr;
-                }
-            };
-
-            gPluginFrameHooks.push_back({ .before = findHook("PluginBeforeUpdate"), .after = findHook("PluginUpdate") });
-        }
-
-        gLoadedPlugins[pluginPath] = plugin;
-
-        return plugin->native_handle();
+        return RegisterPluginLibrary(descriptor, std::move(library), pluginPath);
 #else
-        amLogError("The plugin system is not supported on this platform.");
+        amLogError("Plugins cannot be loaded from shared libraries on this platform. Link them statically and call "
+                   "Engine::RegisterStaticPlugins().");
         return nullptr;
 #endif
+    }
+
+    bool Engine::RegisterPlugin(const PluginDescriptor* descriptor)
+    {
+        return PluginRegistry::Register(descriptor);
+    }
+
+    bool Engine::RegisterStaticPlugins()
+    {
+        if (IsEngineRunning())
+        {
+            amLogError(
+                "Static plugins cannot be registered while the engine is initialized. Register them before Engine::Initialize().");
+            return false;
+        }
+
+        bool success = true;
+        for (auto* it = StaticPluginRegistration::GetFirst(); it != nullptr; it = it->GetNext())
+        {
+            if (PluginRegistry::IsRegistered(it->GetDescriptor()))
+                continue;
+
+            success &= PluginRegistry::Register(it->GetDescriptor());
+        }
+
+        return success;
+    }
+
+    bool Engine::IsPluginRegistered(const AmString& name)
+    {
+        return PluginRegistry::IsRegistered(name);
     }
 
     void Engine::AddPluginSearchPath(const AmOsString& path)
@@ -872,6 +865,9 @@ namespace SparkyStudios::Audio::Amplitude
 
     void Engine::DestroyInstance()
     {
+        // Plugins unregister while the instance is still published, so their Unregister functions can still reach it.
+        PluginRegistry::UnregisterAll();
+
         std::lock_guard lock(gInstanceMutex);
 
         // The engine must be deinitialized before it is destroyed.
@@ -2924,10 +2920,8 @@ namespace SparkyStudios::Audio::Amplitude
 
         EraseFinishedSounds(_state);
 
-#ifndef AM_PLUGINS_UNSUPPORTED
         // Plugins see the state the host left, before the listeners, rooms and entities update.
-        CallPluginFrameHooks(delta, true);
-#endif
+        PluginRegistry::CallFrameCallbacks(ePluginFrameStage_BeforeUpdate, delta);
 
         _state->room_list.sort(
             [](const RoomInternalState& a, const RoomInternalState& b) -> bool
@@ -2974,10 +2968,8 @@ namespace SparkyStudios::Audio::Amplitude
             }
         }
 
-#ifndef AM_PLUGINS_UNSUPPORTED
         // Plugins see the final listener, room and entity state, and what they set applies to this frame's channel updates.
-        CallPluginFrameHooks(delta, false);
-#endif
+        PluginRegistry::CallFrameCallbacks(ePluginFrameStage_AfterUpdate, delta);
 
         for (auto&& bus : _state->buses)
             bus->ResetDuckGain();

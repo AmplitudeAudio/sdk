@@ -29,6 +29,7 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             // Test loading a valid plugin
             AmVoidPtr handle = Engine::LoadPlugin(AM_OS_STRING("test_plugin"));
             AM_EXPECT(handle != nullptr);
+            AM_EXPECT(Engine::IsPluginRegistered("Test Plugin"));
 
             // Test loading a non-existent plugin (should return nullptr)
             AmVoidPtr invalidHandle = Engine::LoadPlugin(AM_OS_STRING("non_existent_plugin"));
@@ -57,4 +58,44 @@ namespace SparkyStudios::Audio::Amplitude::Tests
     };
 
     AM_REGISTER_TEST_REQUIRES_PLUGINS(core_engine, load_plugin);
+
+    AM_TEST_CASE(ComponentTestCase, core_engine, load_plugin_refuses_libraries_built_for_another_abi)
+    {
+    public:
+        void Run() override
+        {
+            // The descriptor is checked before the engine calls into the plugin.
+            AM_EXPECT(Engine::LoadPlugin(AM_OS_STRING("test_plugin_bad_abi")) == nullptr);
+            AM_EXPECT(!Engine::IsPluginRegistered("Test Plugin With Another ABI"));
+        }
+    };
+
+    AM_REGISTER_TEST_REQUIRES_PLUGINS(core_engine, load_plugin_refuses_libraries_built_for_another_abi);
+
+    AM_TEST_CASE(ComponentTestCase, core_engine, load_plugin_fails_cleanly_on_libraries_without_a_descriptor)
+    {
+    public:
+        void Run() override
+        {
+            // dylib throws when a symbol is missing; LoadPlugin reports the failure instead of letting the exception escape.
+            AmVoidPtr handle = reinterpret_cast<AmVoidPtr>(1);
+            bool threw = false;
+
+            try
+            {
+                handle = Engine::LoadPlugin(AM_OS_STRING("test_plugin_no_entry"));
+            } catch (...)
+            {
+                threw = true;
+            }
+
+            AM_EXPECT(!threw);
+            AM_EXPECT(handle == nullptr);
+
+            // The failed load leaves nothing behind: a valid plugin still loads.
+            AM_EXPECT(Engine::LoadPlugin(AM_OS_STRING("test_plugin")) != nullptr);
+        }
+    };
+
+    AM_REGISTER_TEST_REQUIRES_PLUGINS(core_engine, load_plugin_fails_cleanly_on_libraries_without_a_descriptor);
 } // namespace SparkyStudios::Audio::Amplitude::Tests

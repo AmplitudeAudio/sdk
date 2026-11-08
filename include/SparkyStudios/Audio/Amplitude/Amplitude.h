@@ -74,6 +74,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/ChannelEventListener.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Plugin.h>
 #include <SparkyStudios/Audio/Amplitude/Core/RefCounter.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Tag.h>

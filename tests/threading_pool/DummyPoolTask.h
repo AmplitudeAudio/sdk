@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include <SparkyStudios/Audio/Amplitude/Core/Thread.h>
 
 namespace SparkyStudios::Audio::Amplitude
@@ -32,12 +34,12 @@ namespace SparkyStudios::Audio::Amplitude
             if (_targetThreadId != _executingThreadId)
                 Thread::Sleep(1000);
 
-            _isExecuted = true;
+            _isExecuted.store(true, std::memory_order_release);
         }
 
         [[nodiscard]] bool IsExecuted() const
         {
-            return _isExecuted;
+            return _isExecuted.load(std::memory_order_acquire);
         }
 
         [[nodiscard]] AmThreadID GetExecutingThreadId() const
@@ -46,7 +48,8 @@ namespace SparkyStudios::Audio::Amplitude
         }
 
     private:
-        bool _isExecuted = false;
+        // Written by the pool thread, read by the test thread.
+        std::atomic<bool> _isExecuted = false;
         AmThreadID _executingThreadId = 0;
         AmThreadID _targetThreadId = 0;
     };

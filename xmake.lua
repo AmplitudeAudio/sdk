@@ -206,14 +206,15 @@ if is_plat("android") then
   add_cxflags("-fPIC", { force = true })
 end
 
--- Plugins disabled on iOS/Android due to:
+-- Plugins cannot be loaded from shared libraries on iOS/Android due to:
 -- 1. App Store dynamic code loading restrictions
 -- 2. Platform limitations on dlopen/dlsym
+-- They are linked statically there instead (see AM_DEFINE_PLUGIN and Engine::RegisterStaticPlugins()).
 if not is_plat("iphoneos") and not is_plat("android") then
   add_requires("dylib ^3.0.1")
   add_packages("dylib")
 else
-  add_defines("AM_PLUGINS_UNSUPPORTED")
+  add_defines("AM_DYNAMIC_PLUGINS_UNSUPPORTED")
 end
 
 -- Use the release CRT, even in Debug builds; This allows compatibility with engine integrations.
@@ -523,6 +524,15 @@ if has_config("unit_tests") then
 
         if #test_binaries == 0 then
           raise("No test binaries found.")
+        end
+
+        -- The shared runner executes the SDK code from the shared library, not from its own binary.
+        local shared_sdk = project.target("Amplitude::Shared")
+        if shared_sdk then
+          local targetfile = shared_sdk:targetfile()
+          if targetfile and os.isfile(targetfile) then
+            table.insert(test_binaries, targetfile)
+          end
         end
 
         -- Generate lcov format report

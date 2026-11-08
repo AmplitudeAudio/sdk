@@ -14,82 +14,63 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 #include <atomic>
+
+using namespace SparkyStudios::Audio::Amplitude;
 
 namespace
 {
-    // Records when each frame hook ran, so the tests can check the call order against the frame.
+    // Records when each frame callback ran, so the tests can check the call order against the frame.
     std::atomic<AmUInt64> gSequence{ 0 };
     std::atomic<AmUInt64> gBeforeCalls{ 0 };
     std::atomic<AmUInt64> gAfterCalls{ 0 };
     std::atomic<AmUInt64> gLastBeforeSequence{ 0 };
     std::atomic<AmUInt64> gLastAfterSequence{ 0 };
+
+    void OnBeforeUpdate(AmTime, AmVoidPtr)
+    {
+        gLastBeforeSequence = ++gSequence;
+        ++gBeforeCalls;
+    }
+
+    void OnAfterUpdate(AmTime, AmVoidPtr)
+    {
+        gLastAfterSequence = ++gSequence;
+        ++gAfterCalls;
+    }
+
+    bool Register(const PluginHost* host)
+    {
+        return host->RegisterFrameCallback(host, ePluginFrameStage_BeforeUpdate, OnBeforeUpdate, nullptr) &&
+            host->RegisterFrameCallback(host, ePluginFrameStage_AfterUpdate, OnAfterUpdate, nullptr);
+    }
+
+    bool Unregister(const PluginHost*)
+    {
+        return true;
+    }
+
+    const PluginDescriptor kDescriptor = {
+        .abiVersion = AM_PLUGIN_ABI_VERSION,
+        .structSize = sizeof(PluginDescriptor),
+        .name = "Test Plugin",
+        .version = "1.0.0",
+        .description = "Test plugin for Amplitude.",
+        .author = "Sparky Studios",
+        .copyright = "Copyright (c) 2025-present Sparky Studios. All rights Reserved.",
+        .license = "Apache License, Version 2.0",
+        .Register = Register,
+        .Unregister = Unregister,
+    };
 } // namespace
 
-extern "C" {
+AM_DEFINE_PLUGIN(TestPlugin, kDescriptor)
 
-AM_API_PLUGIN void PluginBeforeUpdate(AmTime)
-{
-    gLastBeforeSequence = ++gSequence;
-    ++gBeforeCalls;
-}
-
-AM_API_PLUGIN void PluginUpdate(AmTime)
-{
-    gLastAfterSequence = ++gSequence;
-    ++gAfterCalls;
-}
-
-AM_API_PLUGIN void TestPluginHookState(AmUInt64* beforeCalls, AmUInt64* afterCalls, AmUInt64* lastBeforeSequence, AmUInt64* lastAfterSequence)
+extern "C" AM_LIB_EXPORT void TestPluginHookState(
+    AmUInt64* beforeCalls, AmUInt64* afterCalls, AmUInt64* lastBeforeSequence, AmUInt64* lastAfterSequence)
 {
     *beforeCalls = gBeforeCalls;
     *afterCalls = gAfterCalls;
     *lastBeforeSequence = gLastBeforeSequence;
     *lastAfterSequence = gLastAfterSequence;
 }
-
-AM_API_PLUGIN const char* PluginName()
-{
-    return "Test Plugin";
-}
-
-AM_API_PLUGIN const char* PluginVersion()
-{
-    return "1.0.0";
-}
-
-AM_API_PLUGIN const char* PluginDescription()
-{
-    return "Test plugin for Amplitude.";
-}
-
-AM_API_PLUGIN const char* PluginAuthor()
-{
-    return "Sparky Studios";
-}
-
-AM_API_PLUGIN const char* PluginCopyright()
-{
-    return "Copyright (c) 2025-present Sparky Studios. All rights Reserved.";
-}
-
-AM_API_PLUGIN const char* PluginLicense()
-{
-    return "Apache License, Version 2.0";
-}
-
-AM_API_PLUGIN bool RegisterPlugin(Engine* engine, MemoryManager* memoryManager)
-{
-    amLogSuccess("Test plugin registered successfully");
-    return true;
-}
-
-AM_API_PLUGIN bool UnregisterPlugin()
-{
-    amLogSuccess("Test plugin unregistered successfully");
-    return true;
-}
-
-} // extern "C"

@@ -337,7 +337,7 @@ jobs:
   desktop-tests:
     name: "Desktop Tests - ${{ matrix.config.name }}"
     runs-on: ${{ matrix.config.os }}
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -437,7 +437,7 @@ jobs:
           xmake f -y -a ${{ matrix.config.arch }} -p ${{ matrix.config.plat }} -m coverage ${{ matrix.config.toolchain && format('--toolchain={0}', matrix.config.toolchain) || '' }} --build_samples=n --build_tools=y --unit_tests=y --build_assets=y
 
       - name: Build
-        run: xmake b -y amplitude_tests test_plugin test_plugin_no_hooks
+        run: xmake b -y amplitude_tests amplitude_tests_shared
 
       - name: Test
         shell: bash
@@ -458,6 +458,15 @@ jobs:
           export LLVM_PROFILE_FILE="$GITHUB_WORKSPACE/coverage/amplitude_tests-%p.profraw"
 
           "$RUNNER" -v 2>&1 | tee "$GITHUB_WORKSPACE/test_output.log"
+
+          # The tests that load plugins from shared libraries, against the shared SDK.
+          SHARED_RUNNER="${{ matrix.config.plat }}/${{ matrix.config.arch }}/coverage/shared/amplitude_tests_shared"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            SHARED_RUNNER="$SHARED_RUNNER.exe"
+          fi
+
+          export LLVM_PROFILE_FILE="$GITHUB_WORKSPACE/coverage/amplitude_tests_shared-%p.profraw"
+          "$SHARED_RUNNER" -v 2>&1 | tee -a "$GITHUB_WORKSPACE/test_output.log"
 
       - name: Generate coverage
         continue-on-error: true

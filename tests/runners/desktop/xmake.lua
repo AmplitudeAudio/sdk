@@ -44,7 +44,10 @@ target("common_test_shared")
     set_kind("object")
     set_policy("build.fence", true)
 
-    add_deps("Amplitude::Shared", "build_sample_project", "generate_test_package", "ampk")
+    add_deps("Amplitude::Shared")
+    -- Build order only: ampk links the static SDK, which must not reach the link of the shared runner, where it shadows the
+    -- shared SDK (both are named Amplitude).
+    add_deps("build_sample_project", "generate_test_package", "ampk", { inherit = false })
 
     -- Platform-specific source files
     add_files("$(projectdir)/tests/common/TestRegistry.cpp")
@@ -110,4 +113,23 @@ target("amplitude_tests")
 
         return false, err
     end)
+target_end()
+
+-- Desktop runner for the tests that load plugins from shared libraries (`*__shared.cpp`). It links the shared SDK, like the
+-- plugins it loads, and sits next to them so the engine finds them in the executable directory.
+target("amplitude_tests_shared")
+    set_kind("binary")
+    set_default(false)
+    set_group("test_runner")
+    set_targetdir("$(builddir)/$(plat)/$(arch)/$(mode)/shared")
+    set_rundir("$(builddir)")
+
+    add_deps("common_test_shared", "test_plugin", "test_plugin_no_hooks", "test_plugin_bad_abi", "test_plugin_no_entry")
+
+    add_files("$(projectdir)/tests/**/*__shared.cpp")
+
+    -- Runner main
+    add_files("main.cpp")
+
+    add_tests("all", { runargs = { "-v" }, run_timeout = 120000 })
 target_end()

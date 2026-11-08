@@ -25,6 +25,7 @@
 #include <SparkyStudios/Audio/Amplitude/Core/Event.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Listener.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Memory.h>
+#include <SparkyStudios/Audio/Amplitude/Core/Plugin.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Bus.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Playback/Channel.h>
 #include <SparkyStudios/Audio/Amplitude/Core/Room.h>
@@ -1843,16 +1844,69 @@ namespace SparkyStudios::Audio::Amplitude
 #pragma region Plugins Management
 
         /**
-         * @brief Loads a plugin library from the given path.
+         * @brief Loads a plugin from a shared library and registers it.
          *
-         * @param[in] pluginLibraryName The name of the plugin library to load.
+         * The library must define its plugin with @ref AM_DEFINE_PLUGIN (or @ref AM_DEFINE_DYNAMIC_PLUGIN), and must have
+         * been built with the same @ref AM_PLUGIN_ABI_VERSION as the engine. The library is searched in the executable
+         * directory, the current directory, then the plugin search paths.
+         *
+         * @param[in] pluginLibraryName The name of the plugin library to load, without platform prefix or extension.
          *
          * @note Plugins can only be loaded while the engine is not initialized. Loading one afterwards is refused. Loaded
-         * plugins are unloaded when the engine instance is destroyed.
+         * plugins are unregistered, then their library is closed, when the engine instance is destroyed.
+         *
+         * @note Shared libraries cannot be loaded on iOS and Android. Link the plugin statically and use
+         * @ref RegisterStaticPlugins() there.
          *
          * @return A handle to the loaded plugin library, or @c nullptr if it could not be loaded.
          */
         static AmVoidPtr LoadPlugin(const AmOsString& pluginLibraryName);
+
+        /**
+         * @brief Registers a plugin from its descriptor.
+         *
+         * Static and dynamic plugins go through this function. The descriptor is checked first: it must have been built with
+         * the same @ref AM_PLUGIN_ABI_VERSION as the engine, have a name, a version, @c Register and @c Unregister functions,
+         * and its name must not be registered yet. Then the plugin's @c Register function is called.
+         *
+         * @param[in] descriptor The plugin descriptor. Must stay valid until the plugin is unregistered.
+         *
+         * @note Plugins can only be registered while the engine is not initialized. They are unregistered, in the reverse
+         * order of their registration, when the engine instance is destroyed.
+         *
+         * @return @c true if the plugin was registered, @c false otherwise.
+         */
+        static bool RegisterPlugin(const PluginDescriptor* descriptor);
+
+        /**
+         * @brief Registers every plugin linked statically into the program.
+         *
+         * Statically linked plugins are defined with @ref AM_DEFINE_PLUGIN in a plugin built with
+         * @c AM_BUILDSYSTEM_STATIC_PLUGIN, and referenced in the game with @ref AM_STATIC_LINK_PLUGIN. Plugins already
+         * registered are skipped.
+         *
+         * @code{cpp}
+         * AM_STATIC_LINK_PLUGIN(Acoustics)
+         *
+         * Engine::RegisterDefaultExtensions();
+         * Engine::RegisterStaticPlugins();
+         * amEngine->Initialize("config.amconfig");
+         * @endcode
+         *
+         * @note Plugins can only be registered while the engine is not initialized.
+         *
+         * @return @c true if every statically linked plugin is registered, @c false if one of them failed.
+         */
+        static bool RegisterStaticPlugins();
+
+        /**
+         * @brief Checks whether a plugin with the given name is registered.
+         *
+         * @param[in] name The plugin name, as given in its descriptor.
+         *
+         * @return @c true if the plugin is registered.
+         */
+        [[nodiscard]] static bool IsPluginRegistered(const AmString& name);
 
         /**
          * @brief Adds a path in the plugin search paths list.

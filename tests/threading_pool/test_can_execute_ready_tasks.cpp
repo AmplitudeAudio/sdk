@@ -34,7 +34,15 @@ namespace SparkyStudios::Audio::Amplitude::Tests
             AM_EXPECT_NOT(task->IsExecuted());
 
             pool.AddTask(task);
-            Thread::Sleep(1100); // Wait for the task to complete
+
+            // The task works for a second; a loaded runner can take much longer to schedule it.
+            constexpr AmUInt64 kTimeoutMs = 10000;
+            for (AmUInt64 waited = 0; !task->IsExecuted() && waited < kTimeoutMs; waited += 10)
+                Thread::Sleep(10);
+
+            // The pool drops the task right after its work returns.
+            for (AmUInt64 waited = 0; pool.HasTasks() && waited < kTimeoutMs; waited += 10)
+                Thread::Sleep(10);
 
             AM_EXPECT(task->IsExecuted());
             AM_EXPECT_NOT(pool.HasTasks());
