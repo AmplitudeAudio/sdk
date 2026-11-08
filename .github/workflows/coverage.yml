@@ -337,7 +337,7 @@ jobs:
   desktop-tests:
     name: "Desktop Tests - ${{ matrix.config.name }}"
     runs-on: ${{ matrix.config.os }}
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
